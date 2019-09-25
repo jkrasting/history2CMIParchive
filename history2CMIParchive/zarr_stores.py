@@ -1,5 +1,6 @@
 import xarray as _xr
 import zarr as _zarr
+import subprocess
 
 
 def create_zarr_zipstore(ds, rootdir, ignore_vars=[]):
@@ -25,8 +26,12 @@ def create_zarr_zipstore(ds, rootdir, ignore_vars=[]):
 
     for variable in ds.variables:
         if variable not in ignore_vars:
+            # update output directory with variable name
+            outputdir = rootdir.replace('<VARNAME>', variable)
+            # create the output directory
+            check = subprocess.check_call(f'mkdir -p {outputdir}', shell=True)
             # create a zarr store in write mode
-            store = _zarr.ZipStore(f'{rootdir}/{variable}.zip', mode='w')
+            store = _zarr.ZipStore(f'{outputdir}/{variable}.zip', mode='w')
             # create a bogus dataset to copy a single variable
             tmp = _xr.Dataset()
             tmp[variable] = ds[variable]
@@ -62,8 +67,12 @@ def append_to_zarr_zipstore(ds, rootdir, ignore_vars=[], concat_dim='time'):
 
     for variable in ds.variables:
         if variable not in ignore_vars:
+            # update output directory with variable name
+            outputdir = rootdir.replace('<VARNAME>', variable)
+            # create the output directory
+            check = subprocess.check_call(f'mkdir -p {outputdir}', shell=True)
             # open a zarr store in append mode
-            store = _zarr.ZipStore(f'{rootdir}/{variable}.zip', mode='a')
+            store = _zarr.ZipStore(f'{outputdir}/{variable}.zip', mode='a')
             # create a bogus dataset to copy a single variable
             tmp = _xr.Dataset()
             tmp[variable] = ds[variable]
