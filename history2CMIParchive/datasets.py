@@ -18,7 +18,8 @@ coords_need_be_ignored = ['xq', 'yq', 'xh', 'yh', 'zl', 'zi', 'nv', 'z_l', 'z_i'
                           'xh_sub02', 'yh_sub02', 'xq_sub02', 'yq_sub02',
                           'xh_sub03', 'yh_sub03', 'xq_sub03', 'yq_sub03',
                           'xh_sub04', 'yh_sub04', 'xq_sub04', 'yq_sub04',
-                          'xT', 'xTe', 'yT', 'yTe',
+                          'xT', 'xTe', 'yT', 'yTe', 'xB', 'yB', 'ct',
+                          'CELL_AREA', 'COSROT', 'SINROT', 'GEOLON', 'GEOLAT',
                           'Layer', 'Interface']
 
 datasets_need_be_ignored = ['static', 'Vertical_coordinate']
