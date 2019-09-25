@@ -5,24 +5,30 @@ from .zarr_stores import create_zarr_zipstore
 from .zarr_stores import append_to_zarr_zipstore
 import os
 
-list_straits = ['Agulhas_section', 'Barents_opening', 'Bering_Strait', 
-                'Davis_Strait', 'Denmark_Strait', 'Drake_Passage', 
+# list of straits used in the MOM model
+list_straits = ['Agulhas_section', 'Barents_opening', 'Bering_Strait',
+                'Davis_Strait', 'Denmark_Strait', 'Drake_Passage',
                 'English_Channel', 'Faroe_Scotland', 'Florida_Bahamas',
-                'Fram_Strait', 'Gibraltar_Strait', 'Iceland_Faroe_U', 
+                'Fram_Strait', 'Gibraltar_Strait', 'Iceland_Faroe_U',
                 'Iceland_Faroe_V', 'Iceland_Norway', 'Indonesian_Throughflow',
                 'Mozambique_Channel', 'Pacific_undercurrent', 'Taiwan_Luzon',
-                'Windward_Passage' ]
+                'Windward_Passage']
 
-coords_need_be_ignored = ['xq', 'yq', 'xh', 'yh', 'zl', 'zi', 'nv', 'z_l', 'z_i',
+# when appending to store along axis=time, spatial coordinates do not need
+# to be appended (raise error otherwise)
+coords_need_be_ignored = ['xq', 'yq', 'xh', 'yh', 'zl', 'zi',
+                          'nv', 'z_l', 'z_i', 'rho2_l', 'rho2_i',
                           'xh_sub01', 'yh_sub01', 'xq_sub01', 'yq_sub01',
                           'xh_sub02', 'yh_sub02', 'xq_sub02', 'yq_sub02',
                           'xh_sub03', 'yh_sub03', 'xq_sub03', 'yq_sub03',
                           'xh_sub04', 'yh_sub04', 'xq_sub04', 'yq_sub04',
                           'xT', 'xTe', 'yT', 'yTe', 'xB', 'yB', 'ct',
                           'CELL_AREA', 'COSROT', 'SINROT', 'GEOLON', 'GEOLAT',
-                          'Layer', 'Interface']
+                          'Layer', 'Interface', 'scalar_axis']
 
+# same thing for time-invariant datasets
 datasets_need_be_ignored = ['static', 'Vertical_coordinate']
+
 
 def convert_archive_to_zarr_zipstore(archive, ppdir, workdir, ignore_types=[],
                                      ignore_vars=[], newstore=False,
@@ -39,16 +45,15 @@ def convert_archive_to_zarr_zipstore(archive, ppdir, workdir, ignore_types=[],
     # build a list of acceptable files
     files_to_convert = []
     for ncfile in ncfiles:
-        addfile = True # first guess: add file to list
+        addfile = True  # first guess: add file to list
         for filetype in ignore_types:
             if filetype in ncfile:
-                addfile=False
+                addfile = False
             else:
                 pass
         if addfile:
             files_to_convert.append(ncfile)
 
-    print(files_to_convert)
     for ncfile in files_to_convert:
         # extract the file
         extract_ncfile_from_archive(archive, ncfile, workdir)
@@ -62,21 +67,22 @@ def convert_archive_to_zarr_zipstore(archive, ppdir, workdir, ignore_types=[],
         if chunks is None:
             chunks = chunk_choice(component_code, domain=domain)
         # open dataset
-        ds = open_dataset(workdir + os.sep + ncfile, chunks, decode_times=False)
+        ds = open_dataset(workdir + os.sep + ncfile, chunks,
+                          decode_times=False)
         # create store
         if newstore:
             create_zarr_zipstore(ds, rootdir, ignore_vars=ignore_vars)
         else:
             # coordinates don't like to be appended
             ignore_vars += coords_need_be_ignored
-            append_to_zarr_zipstore(ds, rootdir, 
-                                    ignore_vars=ignore_vars, concat_dim=time)
+            append_to_zarr_zipstore(ds, rootdir, ignore_vars=ignore_vars,
+                                    concat_dim=time)
 
     return None
 
 
 def chunk_choice(component_code, domain='OM4p25'):
-    """ default chunking for standard domains """ 
+    """ default chunking for standard domains """
     if domain == 'OM4p25':
         chunks = chunk_choice_OM4p25(component_code)
     else:
@@ -118,9 +124,18 @@ def define_store_path(ncfile, ppdir, grid='gn', tag='v1', timedim='time'):
     """
     cvarname = '<VARNAME>'
 
+    # make separate tree for straits
     for strait in list_straits:
         if strait in ncfile:
             cvarname += f'_{strait}'
+
+    # also separate density space datasets
+    if 'rho2' in ncfile:
+        cvarname += f'_rho2'
+
+    # also separate datasets on woa z-levels
+    if '_z.' in ncfile:
+        cvarname += f'_z'
 
     component_code = define_component_code(ncfile, timedim=timedim)
     store_path = f'{ppdir}/{component_code}/{cvarname}/{grid}/{tag}'
@@ -135,6 +150,8 @@ def define_component_code(ncfile, timedim='time'):
     if 'ice' in ncfile:
         code = 'SI'
     elif 'ocean' in ncfile:
+        code = 'O'
+    elif 'Vertical_coordinate' in ncfile:
         code = 'O'
     else:
         print('Unknown component for file', ncfile)
@@ -198,7 +215,8 @@ def open_dataset(ncfile, chunks, decode_times=False):
     tmp.close()
     # re-open with correct chunking
     if len(useable_chunks) > 1:
-        ds = _xr.open_dataset(ncfile, chunks=useable_chunks, decode_times=decode_times)
+        ds = _xr.open_dataset(ncfile, chunks=useable_chunks,
+                              decode_times=decode_times)
     else:
         ds = _xr.open_dataset(ncfile, decode_times=decode_times)
     return ds

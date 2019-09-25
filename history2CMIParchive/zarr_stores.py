@@ -77,6 +77,10 @@ def append_to_zarr_zipstore(ds, rootdir, ignore_vars=[], concat_dim='time'):
             tmp = _xr.Dataset()
             tmp[variable] = ds[variable]
             # then append to zarr
+            #print(f'appending variable {variable} to store {store}')
+            #print(tmp)
+            #verif = _xr.open_zarr(store)
+            #print(verif)
             tmp.to_zarr(store, mode='a', append_dim=concat_dim)
             # and close store
             store.close()
