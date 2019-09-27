@@ -127,15 +127,15 @@ def define_store_path(ncfile, ppdir, grid='gn', tag='v1', timedim='time'):
     # make separate tree for straits
     for strait in list_straits:
         if strait in ncfile:
-            cvarname += f'_{strait}'
+            grid += f'_{strait}'
 
     # also separate density space datasets
     if 'rho2' in ncfile:
-        cvarname += f'_rho2'
+        grid += f'_rho2'
 
     # also separate datasets on woa z-levels
     if '_z.' in ncfile:
-        cvarname += f'_z'
+        grid += f'_z'
 
     component_code = define_component_code(ncfile, timedim=timedim)
     store_path = f'{ppdir}/{component_code}/{cvarname}/{grid}/{tag}'
@@ -212,6 +212,11 @@ def open_dataset(ncfile, chunks, decode_times=False):
     for k in chunks.keys():
         if k in tmp.dims:
             useable_chunks[k] = chunks[k]
+    # chunks on other dimensions should be size of dims
+    # and not infered from input netcdf file
+    for d in tmp.dims:
+        if d not in useable_chunks:
+            useable_chunks[d] = len(tmp[d])
     tmp.close()
     # re-open with correct chunking
     if len(useable_chunks) > 1:
