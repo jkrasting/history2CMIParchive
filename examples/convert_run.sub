@@ -1,0 +1,56 @@
+#!/bin/bash
+#SBATCH -p batch
+#SBATCH -t 24:00:00
+#SBATCH --dependency=###DEPEND
+
+set -x
+
+historydir=/archive/Raphael.Dussin/xanadu_esm4_20190304_mom6_2019.08.08/OM4p25_JRA55do1.4_0netfw_cycle6/gfdl.ncrc4-intel16-prod/history/
+outputdir=/work/Raphael.Dussin/zarr_stores/OM4p25_JRA55do1.4_0netfw_cycle6/
+fyear=1958
+lyear=1969
+
+# check for waiting/processed jobs
+if [ ! -d $outputdir/nextinline ] ; then mkdir -p $outputdir/nextinline ; fi
+
+for year in $( seq $fyear $lyear ) ; do
+
+  # if year has not been processed, put it in the line
+  if [ ! -f $outputdir/nextinline/$year.thankyounext ] ; then touch $outputdir/nextinline/$year.inline ; fi
+
+done
+
+# default is not resubmission unless something is processed
+resubmit=0
+for year in $( seq $fyear $lyear ) ; do
+
+  # check processed items (years)
+  if [ -f $outputdir/nextinline/$year.thankyounext ] ; then echo year $year has been processed ; fi
+  # first item found sequentially is processed, break loop and set to resubmit
+  if [ -f $outputdir/nextinline/$year.inline ] ; then echo processing year $year ; resubmit=1 ; break ; fi
+
+done
+
+# year is now the value when we broke out of the loop
+# double-check item needs processing and run conversion
+if [ -f $outputdir/nextinline/$year.inline ] ; then
+
+  sleep 10
+  echo convert_history.py -h $historydir -o $outputdir -y $year -s $fyear
+
+  # save state of conversion success/failure
+  if [ $? == 0 ] ; then successful=1 ; else successful=0 ; fi
+  
+  # if success, set flag as done and move on to the next one
+  if [ $successful == 1 ] ; then mv $outputdir/nextinline/$year.inline $outputdir/nextinline/$year.thankyounext ; fi
+
+fi
+
+# if needed, resubmit the script (will work on next one in line)
+if [ $resubmit == 1 ] ; then
+  here=$( pwd )
+  subscript=convert_run.sub
+  module load slurm
+  sbatch $here/$subscript
+fi
+
