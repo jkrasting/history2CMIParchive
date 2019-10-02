@@ -1,6 +1,7 @@
 import xarray as _xr
 import zarr as _zarr
 import subprocess
+from .site_specific import get_from_tape
 
 
 def create_zarr_zipstore(ds, rootdir, ignore_vars=[]):
@@ -42,7 +43,7 @@ def create_zarr_zipstore(ds, rootdir, ignore_vars=[]):
     return None
 
 
-def append_to_zarr_zipstore(ds, rootdir, ignore_vars=[], concat_dim='time'):
+def append_to_zarr_zipstore(ds, rootdir, ignore_vars=[], concat_dim='time', site='gfdl'):
     """
     Write each variable from a xarray Dataset ds into an existing zarr ZipStore
     under the root directory rootdir, excluding optional variables from
@@ -71,6 +72,8 @@ def append_to_zarr_zipstore(ds, rootdir, ignore_vars=[], concat_dim='time'):
             outputdir = rootdir.replace('<VARNAME>', variable)
             # create the output directory
             check = subprocess.check_call(f'mkdir -p {outputdir}', shell=True)
+            # get from tape if needed
+            check = get_from_tape(f'{outputdir}', f'{variable}.zip', site=site)
             # open a zarr store in append mode
             store = _zarr.ZipStore(f'{outputdir}/{variable}.zip', mode='a')
             # create a bogus dataset to copy a single variable
