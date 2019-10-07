@@ -9,6 +9,6 @@ def get_from_tape(mydir, myfile, site='gfdl'):
         command = ''
         pass  # if nothing else, assuming no tape system 
 
-    check = sp.subprocess(command, shell=True)
+    check = sp.check_call(command, shell=True)
     return check
     

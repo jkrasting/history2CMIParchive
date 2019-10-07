@@ -66,6 +66,10 @@ def convert_archive_to_zarr_zipstore(archive, ppdir, workdir, ignore_types=[],
         # decide chunking if none provided
         if chunks is None:
             chunks = chunk_choice(component_code, domain=domain)
+
+        print(f'component_code is {component_code}')
+        print(f'domain is {domain}')
+        print(f'chunks are {chunks}')
         # open dataset
         ds = open_dataset(workdir + os.sep + ncfile, chunks,
                           decode_times=False)
@@ -75,6 +79,7 @@ def convert_archive_to_zarr_zipstore(archive, ppdir, workdir, ignore_types=[],
         else:
             # coordinates don't like to be appended
             ignore_vars += coords_need_be_ignored
+            # append to store
             append_to_zarr_zipstore(ds, rootdir, ignore_vars=ignore_vars,
                                     concat_dim=time)
 
@@ -85,6 +90,8 @@ def chunk_choice(component_code, domain='OM4p25'):
     """ default chunking for standard domains """
     if domain == 'OM4p25':
         chunks = chunk_choice_OM4p25(component_code)
+    elif domain == 'OM4p125':
+        chunks = chunk_choice_OM4p125(component_code)
     else:
         print('Unknown domain, defaulting to time-based')
         chunks = chunk_choice_default(component_code)
@@ -102,6 +109,23 @@ def chunk_choice_OM4p25(component_code):
         chunks.update({'time': 12})
     elif 'yr' in component_code:
         chunks.update({'time': 1})
+    else:
+        chunks.update({'time': 1})
+    return chunks
+
+
+def chunk_choice_OM4p125(component_code):
+    """ default chunking for OM4p125 """
+    # set to one vertical level
+    chunks = {'z_i': 1, 'z_l': 1, 'rho2_l': 1, 'rho2_i': 1, 'zi': 1, 'zl': 1}
+    if 'mon' in component_code:
+        chunks['time'] = 1
+    elif 'day' in component_code:
+        chunks['time'] = 1
+    elif 'yr' in component_code:
+        chunks['time'] = 1
+    else:
+        chunks['time'] = 1
     return chunks
 
 
