@@ -11,7 +11,7 @@ historydir = '/archive/Raphael.Dussin/xanadu_esm4_20190304_mom6_2019.08.08/OM4p2
 outputdir = '/work/Raphael.Dussin/zarr_stores/OM4p25_JRA55do1.4_0netfw_cycle5/'
 tmpdir = '/work/Raphael.Dussin/' + str(uuid.uuid4()) 
 firstyear = 1958
-lastyear = 1959
+lastyear = 2018
 
 #ignore_types_debug = ['ice', 'daily', 'month' ]
 #ignore_types_debug = ['ice', 'daily', 'month', 'annual', 'Vertical' ]

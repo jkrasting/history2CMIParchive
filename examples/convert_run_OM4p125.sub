@@ -1,16 +1,18 @@
 #!/bin/bash
 #SBATCH -p batch
-#SBATCH -t 24:00:00
+#SBATCH -t 48:00:00
 #SBATCH --dependency=###DEPEND
 
 set -x
 
-historydir=/archive/Raphael.Dussin/xanadu_esm4_20190304_mom6_2019.08.08/OM4p25_JRA55do1.4_0netfw_cycle6/gfdl.ncrc4-intel16-prod/history/
-outputdir=/work/Raphael.Dussin/zarr_stores/OM4p25_JRA55do1.4_0netfw_cycle6/
+historydir=/archive/Raphael.Dussin/xanadu_esm4_20190304_mom6_2019.08.08/OM4p125_JRA55do1.4_cycle1/gfdl.ncrc4-intel16-prod/history
+outputdir=/archive/Raphael.Dussin/xanadu_esm4_20190304_mom6_2019.08.08/OM4p125_JRA55do1.4_cycle1/gfdl.ncrc4-intel16-prod/zstore
 fyear=1958
-lyear=1959
+lyear=2018
 
 python=/nbhome/Raphael.Dussin/anaconda3/envs/analysis/bin/python
+
+if [ ! -d $outputdir ] ; then mkdir $outputdir ; fi
 
 # check for waiting/processed jobs
 if [ ! -d $outputdir/nextinline ] ; then mkdir -p $outputdir/nextinline ; fi
@@ -38,10 +40,10 @@ done
 if [ -f $outputdir/nextinline/$year.inline ] ; then
 
   sleep 1
-  python convert_history.py -h $historydir -o $outputdir -y $year -s $fyear
+  $python convert_history.py -H $historydir -o $outputdir -y $year -s $fyear -d OM4p125 -i iceberg_trajectories
 
   # save state of conversion success/failure
-  if [ $? == 0 ] ; then successful=1 ; else successful=0 ; fi
+  if [ $? == 0 ] ; then successful=1 ; else successful=0 ; resubmit=0 ; fi
   
   # if success, set flag as done and move on to the next one
   if [ $successful == 1 ] ; then mv $outputdir/nextinline/$year.inline $outputdir/nextinline/$year.thankyounext ; fi
@@ -51,8 +53,9 @@ fi
 # if needed, resubmit the script (will work on next one in line)
 if [ $resubmit == 1 ] ; then
   here=$( pwd )
-  subscript=convert_run.sub
+  subscript=convert_run_OM4p125.sub
   module load slurm
+  cd $here
   sbatch $here/$subscript
 fi
 
