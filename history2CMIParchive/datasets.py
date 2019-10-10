@@ -1,8 +1,8 @@
 import xarray as _xr
 from .tar_utilities import list_files_archive
 from .tar_utilities import extract_ncfile_from_archive
-from .zarr_stores import create_zarr_zipstore
-from .zarr_stores import append_to_zarr_zipstore
+from .zarr_stores import create_zarr_store
+from .zarr_stores import append_to_zarr_store
 import os
 
 # list of straits used in the MOM model
@@ -27,13 +27,14 @@ coords_need_be_ignored = ['xq', 'yq', 'xh', 'yh', 'zl', 'zi',
                           'Layer', 'Interface', 'scalar_axis']
 
 # same thing for time-invariant datasets
-datasets_need_be_ignored = ['static', 'Vertical_coordinate']
+datasets_need_be_ignored = ['static', 'Vertical_coordinate',
+                            'sea_ice_geometry']
 
 
-def convert_archive_to_zarr_zipstore(archive, ppdir, workdir, ignore_types=[],
-                                     ignore_vars=[], newstore=False,
-                                     grid='gn', tag='v1', time='time',
-                                     domain='OM4p25', chunks=None):
+def convert_archive_to_zarr_store(archive, ppdir, workdir, ignore_types=[],
+                                  ignore_vars=[], newstore=False,
+                                  grid='gn', tag='v1', time='time',
+                                  domain='OM4p25', chunks=None):
 
     # figure out what files are in the archive
     ncfiles = list_files_archive(archive)
@@ -75,13 +76,13 @@ def convert_archive_to_zarr_zipstore(archive, ppdir, workdir, ignore_types=[],
                           decode_times=False)
         # create store
         if newstore:
-            create_zarr_zipstore(ds, rootdir, ignore_vars=ignore_vars)
+            create_zarr_store(ds, rootdir, ignore_vars=ignore_vars)
         else:
             # coordinates don't like to be appended
             ignore_vars += coords_need_be_ignored
             # append to store
-            append_to_zarr_zipstore(ds, rootdir, ignore_vars=ignore_vars,
-                                    concat_dim=time)
+            append_to_zarr_store(ds, rootdir, ignore_vars=ignore_vars,
+                                 concat_dim=time)
 
     return None
 

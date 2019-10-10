@@ -4,6 +4,7 @@
 #SBATCH --dependency=###DEPEND
 
 set -x
+umask 022
 
 historydir=/archive/Raphael.Dussin/xanadu_esm4_20190304_mom6_2019.08.08/OM4p125_JRA55do1.4_cycle1/gfdl.ncrc4-intel16-prod/history
 outputdir=/archive/Raphael.Dussin/xanadu_esm4_20190304_mom6_2019.08.08/OM4p125_JRA55do1.4_cycle1/gfdl.ncrc4-intel16-prod/zstore
@@ -40,7 +41,7 @@ done
 if [ -f $outputdir/nextinline/$year.inline ] ; then
 
   sleep 1
-  $python convert_history.py -H $historydir -o $outputdir -y $year -s $fyear -d OM4p125 -i iceberg_trajectories
+  $python convert_history.py -H $historydir -o $outputdir -y $year -s $fyear -d OM4p125 -i iceberg_trajectories ./ocean_static.nc
 
   # save state of conversion success/failure
   if [ $? == 0 ] ; then successful=1 ; else successful=0 ; resubmit=0 ; fi

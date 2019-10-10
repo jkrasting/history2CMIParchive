@@ -8,7 +8,7 @@ import argparse
 import os
 
 parser = argparse.ArgumentParser(description='convert history tar to \
-                                              zarr zipstore')
+                                              zarr store')
 
 parser.add_argument('-H', '--historydir', type=str, required=True,
                     help="path to history tar files")
@@ -36,7 +36,7 @@ if not args.Wall:
     warnings.filterwarnings("ignore")
 
 # create tmp directory (GFDL specific)
-user = sp.check_output('whoami', shell=True).decode('utf-8').replace('\n','')
+user = sp.check_output('whoami', shell=True).decode('utf-8').replace('\n', '')
 uniqueid = uuid.uuid4()
 tmpdir = f'/work/{user}/{uniqueid}'
 check = sp.check_call(f'mkdir {tmpdir}', shell=True)
@@ -59,10 +59,10 @@ ctarfile = f'{args.year}0101.nc.tar'
 check = history2CMIParchive.get_from_tape(args.historydir, ctarfile,
                                           site='gfdl')
 
-history2CMIParchive.convert_archive_to_zarr_zipstore(args.historydir + os.sep + ctarfile,
-                                                     args.outputdir, tmpdir,
-                                                     **kwargs)
+history2CMIParchive.convert_archive_to_zarr_store(args.historydir + os.sep + ctarfile,
+                                                  args.outputdir, tmpdir,
+                                                  **kwargs)
 # clean up this year
 check = sp.check_call(f'rm {tmpdir}/*.nc', shell=True)
 # clean up tmp directory
-#check = sp.check_call(f'rmdir {tmpdir}', shell=True)
+# check = sp.check_call(f'rmdir {tmpdir}', shell=True)
