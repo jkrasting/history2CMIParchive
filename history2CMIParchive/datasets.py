@@ -33,6 +33,7 @@ datasets_need_be_ignored = ['static', 'Vertical_coordinate',
 
 def convert_archive_to_zarr_store(archive, ppdir, workdir, ignore_types=[],
                                   ignore_vars=[], newstore=False,
+                                  storetype='directory',
                                   grid='gn', tag='v1', time='time',
                                   domain='OM4p25', chunks=None):
 
@@ -76,13 +77,14 @@ def convert_archive_to_zarr_store(archive, ppdir, workdir, ignore_types=[],
                           decode_times=False)
         # create store
         if newstore:
-            create_zarr_store(ds, rootdir, ignore_vars=ignore_vars)
+            create_zarr_store(ds, rootdir, ignore_vars=ignore_vars,
+                              storetype=storetype)
         else:
             # coordinates don't like to be appended
             ignore_vars += coords_need_be_ignored
             # append to store
             append_to_zarr_store(ds, rootdir, ignore_vars=ignore_vars,
-                                 concat_dim=time)
+                                 concat_dim=time, storetype=storetype)
 
     return None
 

@@ -44,7 +44,7 @@ def create_zarr_store(ds, rootdir, ignore_vars=[], storetype='directory'):
             elif storetype == 'zip':
                 store = _zarr.ZipStore(f'{outputdir}/{variable}.zip', mode='w')
                 # then copy to zarr
-                tmp.to_zarr(store)
+                tmp.to_zarr(store, mode='w')
             # and close store
             if storetype == 'zip':
                 store.close()

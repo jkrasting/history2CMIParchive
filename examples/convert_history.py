@@ -61,6 +61,7 @@ check = history2CMIParchive.get_from_tape(args.historydir, ctarfile,
 
 history2CMIParchive.convert_archive_to_zarr_store(args.historydir + os.sep + ctarfile,
                                                   args.outputdir, tmpdir,
+                                                  storetype='zip',
                                                   **kwargs)
 # clean up this year
 check = sp.check_call(f'rm {tmpdir}/*.nc', shell=True)
