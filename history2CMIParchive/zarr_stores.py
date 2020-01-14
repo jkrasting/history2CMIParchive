@@ -36,6 +36,7 @@ def create_zarr_store(ds, rootdir, ignore_vars=[], storetype='directory'):
             outputdir = rootdir.replace('<VARNAME>', variable)
             # create the output directory
             check = subprocess.check_call(f'mkdir -p {outputdir}', shell=True)
+            exit_code(check)
             # create a zarr store in write mode
             store_exists = os.path.exists(f'{outputdir}/{variable}')
             if storetype == 'directory' and not store_exists:
@@ -50,13 +51,6 @@ def create_zarr_store(ds, rootdir, ignore_vars=[], storetype='directory'):
             if storetype == 'zip':
                 store.close()
             tmp.close()
-            # fix permissions (only possible for DirectoryStore)
-            if storetype == 'directory':
-                cmd = f'chmod -R go+rX {outputdir}/{variable}'
-                check = subprocess.check_call(cmd, shell=True)
-                exit_code(check)
-            else:
-                pass
     return None
 
 
@@ -95,6 +89,7 @@ def append_to_zarr_store(ds, rootdir, ignore_vars=[], concat_dim='time',
             if storetype == 'zip':
                 check = get_from_tape(f'{outputdir}', f'{variable}.zip',
                                       site=site)
+                exit_code(check)
             # open current store
             if storetype == 'directory':
                 current = _xr.open_zarr(f'{outputdir}/{variable}',
@@ -122,13 +117,6 @@ def append_to_zarr_store(ds, rootdir, ignore_vars=[], concat_dim='time',
                 if storetype == 'zip':
                     store.close()
                 tmp.close()
-                # fix permissions (only possible for DirectoryStore)
-                if storetype == 'directory':
-                    cmd = f'chmod -R go+rX {outputdir}/{variable}'
-                    check = subprocess.check_call(cmd, shell=True)
-                    exit_code(check)
-                else:
-                    pass
             else:
                 print('data already present, skipping')
     return None
