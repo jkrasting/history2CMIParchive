@@ -37,7 +37,8 @@ def create_zarr_store(ds, rootdir, ignore_vars=[], storetype='directory'):
             # create the output directory
             check = subprocess.check_call(f'mkdir -p {outputdir}', shell=True)
             # create a zarr store in write mode
-            if storetype == 'directory' and not os.path.exists(f'{outputdir}/{variable}'):
+            store_exists = os.path.exists(f'{outputdir}/{variable}')
+            if storetype == 'directory' and not store_exists:
                 store = _zarr.DirectoryStore(f'{outputdir}/{variable}')
                 # then copy to zarr
                 tmp.to_zarr(store)
@@ -51,7 +52,9 @@ def create_zarr_store(ds, rootdir, ignore_vars=[], storetype='directory'):
             tmp.close()
             # fix permissions (only possible for DirectoryStore)
             if storetype == 'directory':
-                check = subprocess.check_call(f'chmod -R go+rX {outputdir}/{variable}', shell=True)
+                cmd = f'chmod -R go+rX {outputdir}/{variable}'
+                check = subprocess.check_call(cmd, shell=True)
+                exit_code(check)
             else:
                 pass
     return None
@@ -104,7 +107,6 @@ def append_to_zarr_store(ds, rootdir, ignore_vars=[], concat_dim='time',
             current.close()
             if new_frame > last_current_frame:
                 print('new data available, appending to store')
-                # check = subprocess.check_call(f'cp {outputdir}/{variable}.zip {outputdir}/{variable}.zip.bkup', shell=True)
                 # create a bogus dataset to copy a single variable
                 tmp = _xr.Dataset()
                 tmp[variable] = ds[variable]
@@ -122,9 +124,19 @@ def append_to_zarr_store(ds, rootdir, ignore_vars=[], concat_dim='time',
                 tmp.close()
                 # fix permissions (only possible for DirectoryStore)
                 if storetype == 'directory':
-                    check = subprocess.check_call(f'chmod -R go+rX {outputdir}/{variable}', shell=True)
+                    cmd = f'chmod -R go+rX {outputdir}/{variable}'
+                    check = subprocess.check_call(cmd, shell=True)
+                    exit_code(check)
                 else:
                     pass
             else:
                 print('data already present, skipping')
     return None
+
+
+def exit_code(return_code):
+    import sys
+    """exit with return code """
+    if return_code != 0:
+        sys.exit(return_code)
+        return None
