@@ -37,10 +37,13 @@ ds_add['time'] = np.arange(13, 25)
 
 
 @pytest.mark.parametrize("storetype", ['directory', 'zip'])
-def test_create_zarr_store(tmpdir, storetype):
+@pytest.mark.parametrize("consolidated", [True, False])
+def test_create_zarr_store(tmpdir, storetype, consolidated):
     from history2CMIParchive.zarr_stores import create_zarr_store
     rootdir = f'{tmpdir}/<VARNAME>'
-    create_zarr_store(ds_ref, rootdir, storetype=storetype)
+    create_zarr_store(ds_ref, rootdir,
+                      storetype=storetype,
+                      consolidated=consolidated)
 
     if storetype == 'directory':
         # check permission for a random chunk
@@ -48,7 +51,7 @@ def test_create_zarr_store(tmpdir, storetype):
         assert oct(fstat.st_mode)[-3:] == '644'
         # open variable from zarr
         temp_from_zarr = xr.open_zarr(f'{tmpdir}/thetao/thetao',
-                                      consolidated=False)
+                                      consolidated=consolidated)
     elif storetype == 'zip':
         # check permission for a random chunk in zip
         _ = sp.check_call(f'cd {tmpdir}/thetao/; unzip thetao.zip', shell=True)
@@ -56,13 +59,14 @@ def test_create_zarr_store(tmpdir, storetype):
         assert oct(fstat.st_mode)[-3:] == '644'
         # open variable from zarr
         temp_from_zarr = xr.open_zarr(f'{tmpdir}/thetao/thetao.zip',
-                                      consolidated=False)
+                                      consolidated=consolidated)
     assert ds_ref['thetao'] == temp_from_zarr
     return None
 
 
 @pytest.mark.parametrize("storetype", ['directory', 'zip'])
-def test_append_zarr_store(tmpdir, storetype):
+@pytest.mark.parametrize("consolidated", [True, False])
+def test_append_zarr_store(tmpdir, storetype, consolidated):
     from history2CMIParchive.zarr_stores import create_zarr_store
     from history2CMIParchive.zarr_stores import append_to_zarr_store
 
@@ -70,7 +74,16 @@ def test_append_zarr_store(tmpdir, storetype):
     create_zarr_store(ds_ref, rootdir, storetype=storetype)
     append_to_zarr_store(ds_add, rootdir,
                          ignore_vars=['xh', 'yh', 'z_l'],
-                         storetype=storetype, site='')
+                         storetype=storetype,
+                         consolidated=consolidated,
+                         site='')
+
+    # test function filters out variables without concat dim
+    append_to_zarr_store(ds_add, rootdir,
+                         ignore_vars=[],
+                         storetype=storetype,
+                         consolidated=consolidated,
+                         site='')
 
     if storetype == 'directory':
         # check permission for a random chunk
@@ -78,10 +91,10 @@ def test_append_zarr_store(tmpdir, storetype):
         assert oct(fstat.st_mode)[-3:] == '644'
         # open variable from zarr
         temp_from_zarr = xr.open_zarr(f'{tmpdir}/thetao/thetao',
-                                      consolidated=False)
+                                      consolidated=consolidated)
     elif storetype == 'zip':
         # open variable from zarr
         temp_from_zarr = xr.open_zarr(f'{tmpdir}/thetao/thetao.zip',
-                                      consolidated=False)
+                                      consolidated=consolidated)
     ds_update = xr.concat([ds_ref, ds_add], dim='time')
     assert ds_update['thetao'] == temp_from_zarr

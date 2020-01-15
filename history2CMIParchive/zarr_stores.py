@@ -5,7 +5,9 @@ from .site_specific import get_from_tape
 import os
 
 
-def create_zarr_store(ds, rootdir, ignore_vars=[], storetype='directory'):
+def create_zarr_store(ds, rootdir, ignore_vars=[],
+                      storetype='directory',
+                      consolidated=True):
     """
     Write each variable from a xarray Dataset ds into a new zarr ZipStore
     under the root directory rootdir, excluding optional variables from
@@ -42,11 +44,11 @@ def create_zarr_store(ds, rootdir, ignore_vars=[], storetype='directory'):
             if storetype == 'directory' and not store_exists:
                 store = _zarr.DirectoryStore(f'{outputdir}/{variable}')
                 # then copy to zarr
-                tmp.to_zarr(store)
+                tmp.to_zarr(store, consolidated=consolidated)
             elif storetype == 'zip':
                 store = _zarr.ZipStore(f'{outputdir}/{variable}.zip', mode='w')
                 # then copy to zarr
-                tmp.to_zarr(store, mode='w')
+                tmp.to_zarr(store, mode='w', consolidated=consolidated)
             # and close store
             if storetype == 'zip':
                 store.close()
@@ -55,7 +57,8 @@ def create_zarr_store(ds, rootdir, ignore_vars=[], storetype='directory'):
 
 
 def append_to_zarr_store(ds, rootdir, ignore_vars=[], concat_dim='time',
-                         storetype='directory', site='gfdl'):
+                         storetype='directory',
+                         consolidated=True, site='gfdl'):
     """
     Write each variable from a xarray Dataset ds into an existing zarr ZipStore
     under the root directory rootdir, excluding optional variables from
@@ -79,7 +82,10 @@ def append_to_zarr_store(ds, rootdir, ignore_vars=[], concat_dim='time',
     """
 
     for variable in ds.variables:
+        if concat_dim not in ds[variable].dims:
+            ignore_vars.append(variable)
         if variable not in ignore_vars:
+            assert concat_dim in ds[variable].dims
             print(f'writing {variable}')
             # update output directory with variable name
             outputdir = rootdir.replace('<VARNAME>', variable)
@@ -93,10 +99,12 @@ def append_to_zarr_store(ds, rootdir, ignore_vars=[], concat_dim='time',
             # open current store
             if storetype == 'directory':
                 current = _xr.open_zarr(f'{outputdir}/{variable}',
-                                        decode_times=False)
+                                        decode_times=False,
+                                        consolidated=consolidated)
             elif storetype == 'zip':
                 current = _xr.open_zarr(f'{outputdir}/{variable}.zip',
-                                        decode_times=False)
+                                        decode_times=False,
+                                        consolidated=consolidated)
             last_current_frame = current[concat_dim].values[-1]
             new_frame = ds[concat_dim].values[0]
             current.close()
@@ -112,7 +120,9 @@ def append_to_zarr_store(ds, rootdir, ignore_vars=[], concat_dim='time',
                     store = _zarr.ZipStore(f'{outputdir}/{variable}.zip',
                                            mode='a')
                 # then append to zarr
-                tmp.to_zarr(store, mode='a', append_dim=concat_dim)
+                tmp.to_zarr(store, mode='a',
+                            append_dim=concat_dim,
+                            consolidated=consolidated)
                 # and close store
                 if storetype == 'zip':
                     store.close()
