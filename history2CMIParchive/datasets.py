@@ -170,7 +170,22 @@ def define_store_path(ncfile, ppdir, grid='gn', tag='v1', timedim='time'):
 
 
 def define_component_code(ncfile, timedim='time'):
-    """ based on filename, infer what component it belongs to """
+    """ based on filename, infer what component it belongs to
+
+    PARAMETERS:
+    -----------
+
+    ncfile: str
+        input netcdf file
+    timedim: str
+        time dimension in file
+
+    RETURNS:
+    --------
+
+    code: str
+
+    """
 
     code = ''
     # ESM component
