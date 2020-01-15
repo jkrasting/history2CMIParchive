@@ -17,10 +17,15 @@ def create_zarr_store(ds, rootdir, ignore_vars=[],
     ===========
 
     ds: xarray.Dataset
-
+        input dataset
     rootdir: str
-
+        root path to the zarr stores
     ignore_vars: list
+        variables to ignore
+    storetype: str
+        zarr store type (directory, zip)
+    consolidated: logical
+        zarr option to store (default = True)
 
     RETURNS:
     ========
@@ -68,12 +73,19 @@ def append_to_zarr_store(ds, rootdir, ignore_vars=[], concat_dim='time',
     ===========
 
     ds: xarray.Dataset
-
+        input dataset
     rootdir: str
-
+        root path to the zarr stores
     ignore_vars: list
-
+        variables to ignore
     concat_dim: str
+        dimension along which to append to store
+    storetype: str
+        zarr store type (directory, zip)
+    consolidated: logical
+        zarr option to store (default = True)
+    site: str
+        control archive retrieval from tape (default = 'gfdl')
 
     RETURNS:
     ========
