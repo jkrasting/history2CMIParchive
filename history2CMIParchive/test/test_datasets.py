@@ -70,6 +70,31 @@ def test_define_store_path(tmpdir):
     assert storepath == f'{ppdir}/{code}/<VARNAME>/{grid}/{tag}'
 
 
+def test_infer_store_path(tmpdir):
+    from history2CMIParchive.datasets import infer_store_path
+    from history2CMIParchive.datasets import define_component_code
+
+    ds_1 = define_test_dataset()
+    ds_1.to_netcdf(f'{tmpdir}/ocean_monthly.nc')
+    ds_1.to_netcdf(f'{tmpdir}/ocean_unknown.nc')
+
+    code = define_component_code(f'{tmpdir}/ocean_monthly.nc',
+                                 timedim='time')
+    ppdir = f'{tmpdir}/pp/'
+    grid = 'gn'
+    tag = 'v1'
+
+    storepath = infer_store_path(f'{tmpdir}/ocean_monthly.nc',
+                                 'thetao', ppdir, code, grid=grid,
+                                 tag=tag)
+    assert storepath == f'{ppdir}/{code}/thetao/{grid}/{tag}'
+
+    storepath = infer_store_path(f'{tmpdir}/ocean_unknown.nc',
+                                 'so', ppdir, code, grid=grid,
+                                 tag=tag)
+    assert storepath == f'{ppdir}/{code}/so/{grid}/{tag}'
+
+
 @pytest.mark.parametrize("code", ['Omon', 'Oday', 'Oyr', 'Ofx',
                                   'SImon', 'SIday', 'SIyr', 'SIfx'])
 def test_chunk_choice_default(code):
@@ -101,3 +126,83 @@ def test_chunk_choice(code, domain):
     from history2CMIParchive.datasets import chunk_choice
     chunk = chunk_choice(code, domain=domain)
     assert isinstance(chunk, dict)
+
+
+@pytest.mark.parametrize("storetype", ['directory', 'zip'])
+@pytest.mark.parametrize("consolidated", [True, False])
+def test_export_nc_out_to_zarr_stores(tmpdir, storetype, consolidated):
+    from history2CMIParchive.datasets import export_nc_out_to_zarr_stores
+    from history2CMIParchive.datasets import define_component_code
+    from history2CMIParchive.datasets import infer_store_path
+
+    ds_1 = define_test_dataset(resolution=1, nt=12)
+    ds_1.to_netcdf(f'{tmpdir}/ocean_monthly.nc')
+
+    ppdir = f'{tmpdir}/pp/'
+
+    export_nc_out_to_zarr_stores(f'{tmpdir}/ocean_monthly.nc',
+                                 ppdir,
+                                 overwrite=False,
+                                 consolidated=consolidated,
+                                 timedim='time',
+                                 chunks=None,
+                                 storetype=storetype,
+                                 grid='gn', tag='v1',
+                                 domain='OM4', site='')
+
+    comp_code = define_component_code(f'{tmpdir}/ocean_monthly.nc')
+    storepath = infer_store_path(f'{tmpdir}/ocean_monthly.nc',
+                                 'thetao', ppdir, comp_code,
+                                 grid='gn', tag='v1')
+
+    if storetype == 'directory':
+        check_ds = xr.open_zarr(f'{storepath}/thetao')
+    elif storetype == 'zip':
+        check_ds = xr.open_zarr(f'{storepath}/thetao.zip')
+
+    assert check_ds['thetao'].equals(ds_1['thetao'])
+
+    # ---------------------------------------------------------
+    # test appending
+
+    ds_2 = ds_1.copy(deep=True)
+    ds_2['time'] = ds_1['time'] + 12
+
+    ds_2.to_netcdf(f'{tmpdir}/ocean_monthly_to_append.nc')
+
+    export_nc_out_to_zarr_stores(f'{tmpdir}/ocean_monthly_to_append.nc',
+                                 ppdir,
+                                 overwrite=False,
+                                 consolidated=consolidated,
+                                 timedim='time',
+                                 chunks=None,
+                                 storetype=storetype,
+                                 grid='gn', tag='v1',
+                                 domain='OM4', site='')
+
+    if storetype == 'directory':
+        check_ds = xr.open_zarr(f'{storepath}/thetao')
+    elif storetype == 'zip':
+        check_ds = xr.open_zarr(f'{storepath}/thetao.zip')
+
+    assert len(check_ds['time']) == 24
+
+    # ---------------------------------------------------------
+    # test overwrite
+
+    export_nc_out_to_zarr_stores(f'{tmpdir}/ocean_monthly.nc',
+                                 ppdir,
+                                 overwrite=True,
+                                 consolidated=consolidated,
+                                 timedim='time',
+                                 chunks=None,
+                                 storetype=storetype,
+                                 grid='gn', tag='v1',
+                                 domain='OM4', site='')
+
+    if storetype == 'directory':
+        check_ds = xr.open_zarr(f'{storepath}/thetao')
+    elif storetype == 'zip':
+        check_ds = xr.open_zarr(f'{storepath}/thetao.zip')
+
+    assert len(check_ds['time']) == 12

@@ -9,6 +9,8 @@ def create_zarr_store(ds, rootdir, ignore_vars=[],
                       storetype='directory',
                       consolidated=True):
     """
+    OBSOLETE
+
     Write each variable from a xarray Dataset ds into a new zarr ZipStore
     under the root directory rootdir, excluding optional variables from
     ignore_vars.
@@ -65,6 +67,8 @@ def append_to_zarr_store(ds, rootdir, ignore_vars=[], concat_dim='time',
                          storetype='directory',
                          consolidated=True, site='gfdl'):
     """
+    OBSOLETE
+
     Write each variable from a xarray Dataset ds into an existing zarr ZipStore
     under the root directory rootdir, excluding optional variables from
     ignore_vars and concatenate along dimension concat_dim.
