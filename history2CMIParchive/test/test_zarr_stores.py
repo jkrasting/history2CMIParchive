@@ -36,6 +36,18 @@ ds_add['time'] = np.arange(13, 25)
 # ds_bad2['time'] = pd.date_range(start='1903-1-1', periods=12, freq='1M')
 
 
+def read_store(tmpdir, varname, storetype, consolidated):
+    """ helper function """
+    if storetype == 'directory':
+        storename = f'{tmpdir}/{varname}'
+    elif storetype == 'zip':
+        storename = f'{tmpdir}/{varname}.zip'
+    # open variable from zarr
+    temp_from_zarr = xr.open_zarr(storename,
+                                  consolidated=consolidated)
+    return temp_from_zarr
+
+
 @pytest.mark.parametrize("storetype", ['directory', 'zip'])
 @pytest.mark.parametrize("consolidated", [True, False])
 def test_create_zarr_store(tmpdir, storetype, consolidated):
@@ -98,3 +110,53 @@ def test_append_zarr_store(tmpdir, storetype, consolidated):
                                       consolidated=consolidated)
     ds_update = xr.concat([ds_ref, ds_add], dim='time')
     assert ds_update['thetao'] == temp_from_zarr
+
+
+@pytest.mark.parametrize("storetype", ['directory', 'zip'])
+@pytest.mark.parametrize("consolidated", [True, False])
+def test_write_to_zarr_store(tmpdir, storetype, consolidated):
+    from history2CMIParchive.zarr_stores import write_to_zarr_store
+
+    # ---------------------------------------------------------------
+    # test the write mode
+    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}', site='',
+                        storetype=storetype, consolidated=consolidated)
+
+    if storetype == 'directory':
+        # check permission for a random chunk
+        fstat = os.stat(f'{tmpdir}/thetao/thetao/0.0.0.0')
+        assert oct(fstat.st_mode)[-3:] == '644'
+    elif storetype == 'zip':
+        # check permission for a random chunk in zip
+        _ = sp.check_call(f'cd {tmpdir} ; unzip thetao.zip', shell=True)
+        fstat = os.stat(f'{tmpdir}/thetao/0.0.0.0')
+        assert oct(fstat.st_mode)[-3:] == '644'
+
+    temp_from_zarr = read_store(tmpdir, 'thetao', storetype, consolidated)
+    assert ds_ref['thetao'] == temp_from_zarr
+
+    # ---------------------------------------------------------------
+    # try to overwrite
+    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}', site='',
+                        storetype=storetype, consolidated=consolidated,
+                        overwrite=True)
+
+    # ---------------------------------------------------------------
+    # test append mode
+    write_to_zarr_store(ds_add['thetao'], f'{tmpdir}', site='',
+                        storetype=storetype, consolidated=consolidated)
+
+    ds_update = xr.concat([ds_ref, ds_add], dim='time')
+    temp_from_zarr = read_store(tmpdir, 'thetao', storetype, consolidated)
+    assert ds_update['thetao'] == temp_from_zarr
+
+    # ---------------------------------------------------------------
+    # overwrite a second time
+    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}', site='',
+                        storetype=storetype, consolidated=consolidated,
+                        overwrite=True)
+
+    temp_from_zarr = read_store(tmpdir, 'thetao', storetype, consolidated)
+    assert ds_ref['thetao'] == temp_from_zarr
+
+    return None

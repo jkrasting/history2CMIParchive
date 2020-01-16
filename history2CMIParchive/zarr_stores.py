@@ -144,6 +144,56 @@ def append_to_zarr_store(ds, rootdir, ignore_vars=[], concat_dim='time',
     return None
 
 
+def write_to_zarr_store(da, storepath, concat_dim='time',
+                        storetype='directory', consolidated=True,
+                        overwrite=False, site='gfdl'):
+    """ create/append to a zarr store """
+
+    # create temp dataset with new data
+    varname = da.name
+    ds = _xr.Dataset()
+    ds[varname] = da
+
+    # zarr store full name/path depends on type
+    if storetype == 'directory':
+        fstore = f'{storepath}/{varname}'
+    elif storetype == 'zip':
+        fstore = f'{storepath}/{varname}.zip'
+
+    # check if file exists
+    store_exists = True if (os.path.exists(fstore)) else False
+
+    # set zarr write/append mode
+    if store_exists and not overwrite:
+        zarrmode = 'a'
+        zarr_kwargs = {'mode': zarrmode, 'append_dim': concat_dim}
+    else:
+        zarrmode = 'w'  # 'w+' ?
+        zarr_kwargs = {'mode': zarrmode}
+
+    # reload the store, if present
+    if storetype == 'zip':
+        check = get_from_tape(f'{storepath}', f'{varname}.zip',
+                              site=site)
+        exit_code(check)
+
+    # check if append is the right thing to do
+
+    # open the store
+    if storetype == 'directory':
+        store = _zarr.DirectoryStore(fstore)
+    elif storetype == 'zip':
+        store = _zarr.ZipStore(fstore, mode=zarrmode)
+    # write to store
+    ds.to_zarr(store, consolidated=consolidated, **zarr_kwargs)
+    # and close store
+    if storetype == 'zip':
+        store.close()
+    ds.close()
+
+    return None
+
+
 def exit_code(return_code):
     import sys
     """exit with return code """
