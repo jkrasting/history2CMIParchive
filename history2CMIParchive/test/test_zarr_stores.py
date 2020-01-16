@@ -159,4 +159,10 @@ def test_write_to_zarr_store(tmpdir, storetype, consolidated):
     temp_from_zarr = read_store(tmpdir, 'thetao', storetype, consolidated)
     assert ds_ref['thetao'] == temp_from_zarr
 
+    # test to write/append coordinates without concat dimension
+    write_to_zarr_store(ds_ref['xh'], f'{tmpdir}', site='',
+                        storetype=storetype, consolidated=consolidated)
+
+    write_to_zarr_store(ds_ref['xh'], f'{tmpdir}', site='',
+                        storetype=storetype, consolidated=consolidated)
     return None

@@ -163,12 +163,18 @@ def write_to_zarr_store(da, storepath, concat_dim='time',
     # check if file exists
     store_exists = True if (os.path.exists(fstore)) else False
 
+    # by default, set write to true
+    write_store = True
+
     # set zarr write/append mode
     if store_exists and not overwrite:
         zarrmode = 'a'
         zarr_kwargs = {'mode': zarrmode, 'append_dim': concat_dim}
+        # edge case: if concat_dim not in dataarray, abort write
+        if concat_dim not in ds[varname].dims:
+            write_store = False
     else:
-        zarrmode = 'w'  # 'w+' ?
+        zarrmode = 'w'
         zarr_kwargs = {'mode': zarrmode}
 
     # reload the store, if present
@@ -178,17 +184,19 @@ def write_to_zarr_store(da, storepath, concat_dim='time',
         exit_code(check)
 
     # check if append is the right thing to do
+    # would return updated value of write_store
 
-    # open the store
-    if storetype == 'directory':
-        store = _zarr.DirectoryStore(fstore)
-    elif storetype == 'zip':
-        store = _zarr.ZipStore(fstore, mode=zarrmode)
-    # write to store
-    ds.to_zarr(store, consolidated=consolidated, **zarr_kwargs)
-    # and close store
-    if storetype == 'zip':
-        store.close()
+    if write_store:
+        # open the store
+        if storetype == 'directory':
+            store = _zarr.DirectoryStore(fstore)
+        elif storetype == 'zip':
+            store = _zarr.ZipStore(fstore, mode=zarrmode)
+        # write to store
+        ds.to_zarr(store, consolidated=consolidated, **zarr_kwargs)
+        # and close store
+        if storetype == 'zip':
+            store.close()
     ds.close()
 
     return None
