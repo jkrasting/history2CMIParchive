@@ -7,7 +7,7 @@ import argparse
 parser = argparse.ArgumentParser(description='convert history netcdf file to \
                                               zarr stores')
 
-parser.add_argument('-i', '--input', type=str, required=True,
+parser.add_argument('-i', '--ncfile', type=str, required=True,
                     help="input netcdf file")
 
 parser.add_argument('-o', '--outputdir', type=str, required=True,
@@ -54,7 +54,7 @@ if not args.Wall:
 proceed = True
 if args.ignore is not None:
     for ignore in args.ignore:
-        if ignore in args.input:
+        if ignore in args.ncfile:
             proceed = False
             break
 
