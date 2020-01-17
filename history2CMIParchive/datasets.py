@@ -93,7 +93,8 @@ def convert_archive_to_zarr_store(archive, ppdir, workdir, ignore_types=[],
     return None
 
 
-def export_nc_out_to_zarr_stores(ncfile, ppdir,
+def export_nc_out_to_zarr_stores(ncfile='',
+                                 outputdir='',
                                  overwrite=False,
                                  consolidated=True,
                                  timedim='time',
@@ -118,7 +119,7 @@ def export_nc_out_to_zarr_stores(ncfile, ppdir,
 
     for variable in ds.variables:
         # define path to zarr store
-        storepath = infer_store_path(ncfile, variable, ppdir,
+        storepath = infer_store_path(ncfile, variable, outputdir,
                                      component_code, grid=grid,
                                      tag=tag)
         # and create path

@@ -140,8 +140,8 @@ def test_export_nc_out_to_zarr_stores(tmpdir, storetype, consolidated):
 
     ppdir = f'{tmpdir}/pp/'
 
-    export_nc_out_to_zarr_stores(f'{tmpdir}/ocean_monthly.nc',
-                                 ppdir,
+    export_nc_out_to_zarr_stores(ncfile=f'{tmpdir}/ocean_monthly.nc',
+                                 outputdir=ppdir,
                                  overwrite=False,
                                  consolidated=consolidated,
                                  timedim='time',
@@ -170,8 +170,8 @@ def test_export_nc_out_to_zarr_stores(tmpdir, storetype, consolidated):
 
     ds_2.to_netcdf(f'{tmpdir}/ocean_monthly_to_append.nc')
 
-    export_nc_out_to_zarr_stores(f'{tmpdir}/ocean_monthly_to_append.nc',
-                                 ppdir,
+    export_nc_out_to_zarr_stores(ncfile=f'{tmpdir}/ocean_monthly_to_append.nc',
+                                 outputdir=ppdir,
                                  overwrite=False,
                                  consolidated=consolidated,
                                  timedim='time',
@@ -190,8 +190,8 @@ def test_export_nc_out_to_zarr_stores(tmpdir, storetype, consolidated):
     # ---------------------------------------------------------
     # test overwrite
 
-    export_nc_out_to_zarr_stores(f'{tmpdir}/ocean_monthly.nc',
-                                 ppdir,
+    export_nc_out_to_zarr_stores(ncfile=f'{tmpdir}/ocean_monthly.nc',
+                                 outputdir=ppdir,
                                  overwrite=True,
                                  consolidated=consolidated,
                                  timedim='time',
