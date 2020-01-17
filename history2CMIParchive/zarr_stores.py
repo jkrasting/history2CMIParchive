@@ -182,7 +182,7 @@ def write_to_zarr_store(da, storepath, concat_dim='time',
         zarr_kwargs = {'mode': zarrmode}
 
     # reload the store, if present
-    if storetype == 'zip':
+    if storetype == 'zip' and store_exists:
         check = get_from_tape(f'{storepath}', f'{varname}.zip',
                               site=site)
         exit_code(check)
