@@ -10,5 +10,6 @@ setuptools.setup(
     license="GPLv3",
     keywords="",
     url="https://github.com/raphaeldussin/history2CMIParchive",
-    packages=['history2CMIParchive']
+    packages=['history2CMIParchive'],
+    scripts=['history2CMIParchive/exe/history_nc_to_zarr.py']
 )

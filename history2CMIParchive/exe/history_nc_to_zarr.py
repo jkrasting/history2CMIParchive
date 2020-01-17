@@ -13,6 +13,12 @@ parser.add_argument('-i', '--input', type=str, required=True,
 parser.add_argument('-o', '--outputdir', type=str, required=True,
                     help="path to output zarr store")
 
+parser.add_argument('-s', '--storetype', type=str, required=True,
+                    default='directory', help="zarr store type")
+
+parser.add_argument('-d', '--domain', type=str, required=True,
+                    default='OM4', help="model domain")
+
 parser.add_argument('-O', '--overwrite', type=bool, required=False,
                     default=False, help="overwrite stores")
 
@@ -25,17 +31,11 @@ parser.add_argument('-T', '--timedim', type=str, required=False,
 parser.add_argument('-K', '--chunks', type=dict, required=False,
                     default=None, help="dict of chunks size")
 
-parser.add_argument('-s', '--storetype', type=str, required=True,
-                    default='directory', help="zarr store type")
-
 parser.add_argument('-G', '--grid', type=str, required=False,
                     default='gn', help="grid type (gn/gr)")
 
 parser.add_argument('-t', '--tag', type=str, required=False,
                     default='v1', help="model version tag")
-
-parser.add_argument('-d', '--domain', type=str, required=True,
-                    default='OM4', help="model domain")
 
 parser.add_argument('-S', '--site', type=str, required=False,
                     default='gfdl', help="site specific")
