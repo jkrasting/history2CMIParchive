@@ -6,10 +6,10 @@ notifications:
 matrix:
   fast_finish: true
   include:
-  - python: 3.5
-    env: CONDA_ENV=py35
   - python: 3.6
     env: CONDA_ENV=py36
+  - python: 3.7
+    env: CONDA_ENV=py37
 
 before_install:
   - wget http://repo.continuum.io/miniconda/Miniconda3-3.16.0-Linux-x86_64.sh -O miniconda.sh;
@@ -26,5 +26,5 @@ install:
   - pip install -e .
 
 script:
-  - py.test history2CMIParchive
+  - py.test -v history2CMIParchive
 
