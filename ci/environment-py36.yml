@@ -5,7 +5,7 @@ dependencies:
   - python=3.6
   - xarray
   - numpy
-  - pytest
+  - pytest=5.3.3
   - blosc
   - pandas
   - dask
