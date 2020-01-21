@@ -19,6 +19,7 @@ before_install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
+  - umask 022
 
 install:
   - conda env create --file ci/environment-$CONDA_ENV.yml
