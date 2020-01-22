@@ -201,6 +201,10 @@ def define_store_path(ncfile, ppdir, grid='gn', tag='v1', timedim='time'):
         if strait in ncfile:
             grid += f'_{strait}'
 
+    # also separate downsampled datasets
+    if '_d2' in ncfile:
+        grid += f'_d2'
+
     # also separate density space datasets
     if 'rho2' in ncfile:
         grid += f'_rho2'
@@ -223,6 +227,10 @@ def infer_store_path(ncfile, varname, ppdir, component_code,
     for strait in list_straits:
         if strait in ncfile:
             grid += f'_{strait}'
+
+    # also separate downsampled datasets
+    if '_d2' in ncfile:
+        grid += f'_d2'
 
     # also separate density space datasets
     if 'rho2' in ncfile:
