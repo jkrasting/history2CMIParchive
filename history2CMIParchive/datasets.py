@@ -101,7 +101,8 @@ def export_nc_out_to_zarr_stores(ncfile='',
                                  chunks=None,
                                  storetype='directory',
                                  grid='gn', tag='v1',
-                                 domain='OM4p25', site='gfdl'):
+                                 domain='OM4p25', site='gfdl',
+                                 debug=False):
 
     """convert all variables form netcdf file and distribute into
     zarr stores"""
@@ -111,9 +112,10 @@ def export_nc_out_to_zarr_stores(ncfile='',
     # decide chunking if none provided
     if chunks is None:
         chunks = chunk_choice(component_code, domain=domain)
-    print(f'component_code is {component_code}')
-    print(f'domain is {domain}')
-    print(f'chunks are {chunks}')
+    if debug:
+        print(f'component_code is {component_code}')
+        print(f'domain is {domain}')
+        print(f'chunks are {chunks}')
     # open dataset
     ds = open_dataset(ncfile, chunks, decode_times=False)
 
@@ -126,11 +128,12 @@ def export_nc_out_to_zarr_stores(ncfile='',
         check = sp.check_call(f'mkdir -p {storepath}', shell=True)
         exit_code(check)
         # write the store
-        print(f'writing {variable} into {storepath}')
+        if debug:
+            print(f'writing {variable} into {storepath}')
         write_to_zarr_store(ds[variable], storepath,
                             concat_dim=timedim, storetype=storetype,
                             consolidated=consolidated,
-                            overwrite=overwrite, site=site)
+                            overwrite=overwrite, site=site, debug=debug)
     return None
 
 

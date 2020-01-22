@@ -43,6 +43,9 @@ parser.add_argument('-S', '--site', type=str, required=False,
 parser.add_argument('-I', '--ignore', nargs='+', required=False,
                     help="types to be ignored")
 
+parser.add_argument('-D', '--debug', type=bool, required=False,
+                    help="print debug information")
+
 parser.add_argument("--Wall", help='show warnings')
 
 args = parser.parse_args()

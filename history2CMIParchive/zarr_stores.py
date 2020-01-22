@@ -150,7 +150,7 @@ def append_to_zarr_store(ds, rootdir, ignore_vars=[], concat_dim='time',
 
 def write_to_zarr_store(da, storepath, concat_dim='time',
                         storetype='directory', consolidated=True,
-                        overwrite=False, site='gfdl'):
+                        overwrite=False, site='gfdl', debug=False):
     """ create/append to a zarr store """
 
     # create temp dataset with new data
@@ -184,7 +184,7 @@ def write_to_zarr_store(da, storepath, concat_dim='time',
     # reload the store, if present
     if storetype == 'zip' and store_exists and not overwrite:
         check = get_from_tape(f'{storepath}', f'{varname}.zip',
-                              site=site)
+                              site=site, debug=debug)
         exit_code(check)
 
     # check if append is the right thing to do
