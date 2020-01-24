@@ -1,0 +1,14 @@
+name: test_env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.6
+  - xarray
+  - numpy
+  - pytest=5.3.3
+  - blosc
+  - pandas
+  - dask
+  - netcdf4
+  - pip:
+    - git+https://github.com/zarr-developers/zarr-python.git

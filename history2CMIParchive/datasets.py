@@ -3,6 +3,8 @@ from .tar_utilities import list_files_archive
 from .tar_utilities import extract_ncfile_from_archive
 from .zarr_stores import create_zarr_store
 from .zarr_stores import append_to_zarr_store
+from .zarr_stores import write_to_zarr_store
+import subprocess as sp
 import os
 
 # list of straits used in the MOM model
@@ -36,6 +38,8 @@ def convert_archive_to_zarr_store(archive, ppdir, workdir, ignore_types=[],
                                   storetype='directory',
                                   grid='gn', tag='v1', time='time',
                                   domain='OM4p25', chunks=None):
+
+    ''' this function should be revised to work with new logic '''
 
     # figure out what files are in the archive
     ncfiles = list_files_archive(archive)
@@ -86,6 +90,50 @@ def convert_archive_to_zarr_store(archive, ppdir, workdir, ignore_types=[],
             append_to_zarr_store(ds, rootdir, ignore_vars=ignore_vars,
                                  concat_dim=time, storetype=storetype)
 
+    return None
+
+
+def export_nc_out_to_zarr_stores(ncfile='',
+                                 outputdir='',
+                                 overwrite=False,
+                                 consolidated=True,
+                                 timedim='time',
+                                 chunks=None,
+                                 storetype='directory',
+                                 grid='gn', tag='v1',
+                                 domain='OM4p25', site='gfdl',
+                                 debug=False):
+
+    """convert all variables form netcdf file and distribute into
+    zarr stores"""
+
+    # the name of ncfile and its time is used to create a code
+    component_code = define_component_code(ncfile, timedim=timedim)
+    # decide chunking if none provided
+    if chunks is None:
+        chunks = chunk_choice(component_code, domain=domain)
+    if debug:
+        print(f'component_code is {component_code}')
+        print(f'domain is {domain}')
+        print(f'chunks are {chunks}')
+    # open dataset
+    ds = open_dataset(ncfile, chunks, decode_times=False)
+
+    for variable in ds.variables:
+        # define path to zarr store
+        storepath = infer_store_path(ncfile, variable, outputdir,
+                                     component_code, grid=grid,
+                                     tag=tag)
+        # and create path
+        check = sp.check_call(f'mkdir -p {storepath}', shell=True)
+        exit_code(check)
+        # write the store
+        if debug:
+            print(f'writing {variable} into {storepath}')
+        write_to_zarr_store(ds[variable], storepath,
+                            concat_dim=timedim, storetype=storetype,
+                            consolidated=consolidated,
+                            overwrite=overwrite, site=site, debug=debug)
     return None
 
 
@@ -146,7 +194,7 @@ def chunk_choice_default(component_code):
 
 
 def define_store_path(ncfile, ppdir, grid='gn', tag='v1', timedim='time'):
-    """ define template path where content of ncfile should be copied,
+    """ OBSOLETE: define template path where content of ncfile should be copied,
         <VARNAME> will be updated by create_store.
     """
     cvarname = '<VARNAME>'
@@ -155,6 +203,10 @@ def define_store_path(ncfile, ppdir, grid='gn', tag='v1', timedim='time'):
     for strait in list_straits:
         if strait in ncfile:
             grid += f'_{strait}'
+
+    # also separate downsampled datasets
+    if '_d2' in ncfile:
+        grid += f'_d2'
 
     # also separate density space datasets
     if 'rho2' in ncfile:
@@ -169,8 +221,49 @@ def define_store_path(ncfile, ppdir, grid='gn', tag='v1', timedim='time'):
     return store_path, component_code
 
 
+def infer_store_path(ncfile, varname, ppdir, component_code,
+                     grid='gn', tag='v1'):
+    """ create the name of the store based on data specs.
+    """
+
+    # make separate tree for straits
+    for strait in list_straits:
+        if strait in ncfile:
+            grid += f'_{strait}'
+
+    # also separate downsampled datasets
+    if '_d2' in ncfile:
+        grid += f'_d2'
+
+    # also separate density space datasets
+    if 'rho2' in ncfile:
+        grid += f'_rho2'
+
+    # also separate datasets on woa z-levels
+    if '_z.' in ncfile:
+        grid += f'_z'
+
+    store_path = f'{ppdir}/{component_code}/{varname}/{grid}/{tag}'
+    return store_path
+
+
 def define_component_code(ncfile, timedim='time'):
-    """ based on filename, infer what component it belongs to """
+    """ based on filename, infer what component it belongs to
+
+    PARAMETERS:
+    -----------
+
+    ncfile: str
+        input netcdf file
+    timedim: str
+        time dimension in file
+
+    RETURNS:
+    --------
+
+    code: str
+
+    """
 
     code = ''
     # ESM component
@@ -252,3 +345,11 @@ def open_dataset(ncfile, chunks, decode_times=False):
     else:
         ds = _xr.open_dataset(ncfile, decode_times=decode_times)
     return ds
+
+
+def exit_code(return_code):
+    import sys
+    """exit with return code """
+    if return_code != 0:
+        sys.exit(return_code)
+        return None

@@ -1,17 +1,17 @@
 #!/bin/bash
-#SBATCH -p batch
+#SBATCH -p analysis
 #SBATCH -t 48:00:00
 #SBATCH --dependency=###DEPEND
 
 set -x
 umask 022
 
-historydir=/archive/Raphael.Dussin/xanadu_esm4_20190304_mom6_2019.08.08/OM4p125_JRA55do1.4_cycle1/gfdl.ncrc4-intel16-prod/history
-outputdir=/archive/Raphael.Dussin/xanadu_esm4_20190304_mom6_2019.08.08/OM4p125_JRA55do1.4_cycle1/gfdl.ncrc4-intel16-prod/zstore
-fyear=1958
-lyear=2018
+historydir=/archive/Raphael.Dussin/xanadu_esm4_20190304_mom6_2019.12.16/OM4p125_JRA55do1.4_mle3d_cycle1/gfdl.ncrc4-intel16-prod/history
+outputdir=/archive/Raphael.Dussin/xanadu_esm4_20190304_mom6_2019.12.16/OM4p125_JRA55do1.4_mle3d_cycle1/gfdl.ncrc4-intel16-prod/zstore
+fyear=1991
+lyear=2000
 
-python=/nbhome/Raphael.Dussin/anaconda3/envs/analysis/bin/python
+python=/net2/rnd/anaconda3/envs/analysis/bin/python
 
 if [ ! -d $outputdir ] ; then mkdir $outputdir ; fi
 
@@ -45,7 +45,7 @@ if [ -f $outputdir/nextinline/$year.inline ] ; then
 
   # save state of conversion success/failure
   if [ $? == 0 ] ; then successful=1 ; else successful=0 ; resubmit=0 ; fi
-  
+
   # if success, set flag as done and move on to the next one
   if [ $successful == 1 ] ; then mv $outputdir/nextinline/$year.inline $outputdir/nextinline/$year.thankyounext ; fi
 
