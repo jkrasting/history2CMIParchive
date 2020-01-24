@@ -152,6 +152,8 @@ def write_to_zarr_store(da, storepath, concat_dim='time',
                         storetype='directory', consolidated=True,
                         overwrite=False, site='gfdl', debug=False):
     """ create/append to a zarr store """
+    # by default, set write to true
+    write_store = True
 
     # create temp dataset with new data
     varname = da.name
@@ -167,8 +169,14 @@ def write_to_zarr_store(da, storepath, concat_dim='time',
     # check if file exists
     store_exists = True if (os.path.exists(fstore)) else False
 
-    # by default, set write to true
-    write_store = True
+    # check if an incomplete store exists
+    fstore_tmp = f'{fstore}_tmp'
+    tmp_store_exists = True if (os.path.exists(fstore_tmp)) else False
+    if tmp_store_exists:
+        print(f'ERROR: incomplete store exists for {fstore}')
+        print('you should consider rebuilding this store')
+        write_store = False
+        pass  # or raise exception?
 
     # set zarr write/append mode
     if store_exists and not overwrite:
@@ -189,21 +197,73 @@ def write_to_zarr_store(da, storepath, concat_dim='time',
 
     # check if append is the right thing to do
     # would return updated value of write_store
+    if store_exists and not overwrite:
+        ok_to_append = appending_needed(storepath, varname,
+                                        storetype, ds[varname],
+                                        concat_dim=concat_dim,
+                                        consolidated=consolidated)
+        if not ok_to_append:
+            write_store = False
 
     if write_store:
-        # open the store
+        # rename into temp store
+        if store_exists:
+            check = subprocess.check_call(f'mv {fstore} {fstore_tmp}',
+                                          shell=True)
+            exit_code(check)
+        # open the temp store
         if storetype == 'directory':
-            store = _zarr.DirectoryStore(fstore)
+            store = _zarr.DirectoryStore(fstore_tmp)
         elif storetype == 'zip':
-            store = _zarr.ZipStore(fstore, mode=zarrmode)
+            store = _zarr.ZipStore(fstore_tmp, mode=zarrmode)
         # write to store
         ds.to_zarr(store, consolidated=consolidated, **zarr_kwargs)
         # and close store
         if storetype == 'zip':
             store.close()
+        # assuming all went ok at this point, revert to original name
+        check = subprocess.check_call(f'mv {fstore_tmp} {fstore}', shell=True)
+        exit_code(check)
     ds.close()
 
     return None
+
+
+def appending_needed(storepath, variable, storetype, new_data,
+                     concat_dim='time', consolidated=True):
+    """ open a zarr store and check if new data needs
+    to be added """
+    # open current store
+    if storetype == 'directory':
+        fstore = f'{storepath}/{variable}'
+    elif storetype == 'zip':
+        fstore = f'{storepath}/{variable}.zip'
+
+    current = _xr.open_zarr(f'{fstore}', decode_times=False,
+                            consolidated=consolidated)
+
+    if concat_dim in current.dims:
+        last_current_frame = current[concat_dim].values[-1]
+        prev_current_frame = current[concat_dim].values[-2]
+        new_frame = new_data[concat_dim].values[0]
+        current.close()
+
+        # test posteriority
+        posterior_ok = True if (new_frame > last_current_frame) else False
+        # test for gaps in time axis
+        dt_old = last_current_frame - prev_current_frame
+        dt_new = new_frame - last_current_frame
+        # monthly/annual avg time interval can vary slightly because
+        # of month length and leap days, hence need for tolerance
+        rtol = 0.2
+        dt_min = dt_old * (1 - rtol)
+        dt_max = dt_old * (1 + rtol)
+        continuity_ok = True if (dt_min < dt_new < dt_max) else False
+        # final decision
+        append = True if (posterior_ok and continuity_ok) else False
+    else:
+        append = False
+    return append
 
 
 def exit_code(return_code):
