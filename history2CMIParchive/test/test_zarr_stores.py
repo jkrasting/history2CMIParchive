@@ -29,11 +29,14 @@ ds_add = ds_ref.copy(deep=True)
 ds_add['time'] = np.arange(13, 25)
 
 # bad appends
-# ds_bad1 = ds_ref.copy(deep=True)
-# ds_bad1['time'] = pd.date_range(start='1899-1-1', periods=12, freq='1M')
+ds_bad1 = ds_ref.copy(deep=True)
+ds_bad1['time'] = np.arange(6, 18)
 
-# ds_bad2 = ds_ref.copy(deep=True)
-# ds_bad2['time'] = pd.date_range(start='1903-1-1', periods=12, freq='1M')
+ds_bad2 = ds_ref.copy(deep=True)
+ds_bad2['time'] = np.arange(1, 13)
+
+ds_bad3 = ds_ref.copy(deep=True)
+ds_bad3['time'] = np.arange(14, 26)
 
 
 def read_store(tmpdir, varname, storetype, consolidated):
@@ -48,6 +51,7 @@ def read_store(tmpdir, varname, storetype, consolidated):
     return temp_from_zarr
 
 
+@pytest.mark.skip(reason="obsoleted function")
 @pytest.mark.parametrize("storetype", ['directory', 'zip'])
 @pytest.mark.parametrize("consolidated", [True, False])
 def test_create_zarr_store(tmpdir, storetype, consolidated):
@@ -76,6 +80,7 @@ def test_create_zarr_store(tmpdir, storetype, consolidated):
     return None
 
 
+@pytest.mark.skip(reason="obsoleted function")
 @pytest.mark.parametrize("storetype", ['directory', 'zip'])
 @pytest.mark.parametrize("consolidated", [True, False])
 def test_append_zarr_store(tmpdir, storetype, consolidated):
@@ -142,13 +147,40 @@ def test_write_to_zarr_store(tmpdir, storetype, consolidated):
                         overwrite=True)
 
     # ---------------------------------------------------------------
-    # test append mode
+    # test append mode with good data
     write_to_zarr_store(ds_add['thetao'], f'{tmpdir}', site='',
                         storetype=storetype, consolidated=consolidated)
 
     ds_update = xr.concat([ds_ref, ds_add], dim='time')
     temp_from_zarr = read_store(tmpdir, 'thetao', storetype, consolidated)
     assert ds_update['thetao'] == temp_from_zarr
+
+    # ----------------------------------------------------------------
+    # now with bad data, first we overwrite:
+    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}', site='',
+                        storetype=storetype, consolidated=consolidated,
+                        overwrite=True)
+
+    write_to_zarr_store(ds_bad1['thetao'], f'{tmpdir}', site='',
+                        storetype=storetype, consolidated=consolidated)
+
+    # check the store have not been updated
+    temp_from_zarr = read_store(tmpdir, 'thetao', storetype, consolidated)
+    assert ds_ref['thetao'] == temp_from_zarr
+
+    write_to_zarr_store(ds_bad2['thetao'], f'{tmpdir}', site='',
+                        storetype=storetype, consolidated=consolidated)
+
+    # check the store have not been updated
+    temp_from_zarr = read_store(tmpdir, 'thetao', storetype, consolidated)
+    assert ds_ref['thetao'] == temp_from_zarr
+
+    write_to_zarr_store(ds_bad3['thetao'], f'{tmpdir}', site='',
+                        storetype=storetype, consolidated=consolidated)
+
+    # check the store have not been updated
+    temp_from_zarr = read_store(tmpdir, 'thetao', storetype, consolidated)
+    assert ds_ref['thetao'] == temp_from_zarr
 
     # ---------------------------------------------------------------
     # overwrite a second time
@@ -159,10 +191,75 @@ def test_write_to_zarr_store(tmpdir, storetype, consolidated):
     temp_from_zarr = read_store(tmpdir, 'thetao', storetype, consolidated)
     assert ds_ref['thetao'] == temp_from_zarr
 
+    # ---------------------------------------------------------------
     # test to write/append coordinates without concat dimension
     write_to_zarr_store(ds_ref['xh'], f'{tmpdir}', site='',
                         storetype=storetype, consolidated=consolidated)
 
     write_to_zarr_store(ds_ref['xh'], f'{tmpdir}', site='',
                         storetype=storetype, consolidated=consolidated)
+
+    # ---------------------------------------------------------------
+    # test behavior with incomplete file
+
+    # write dataset
+    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}', site='',
+                        storetype=storetype, consolidated=consolidated,
+                        overwrite=True)
+
+    # mess up the store
+    if storetype == 'directory':
+        sp.check_call(f'mv {tmpdir}/thetao {tmpdir}/thetao_tmp', shell=True)
+    elif storetype == 'zip':
+        sp.check_call(f'mv {tmpdir}/thetao.zip {tmpdir}/thetao.zip_tmp',
+                      shell=True)
+
+    # try adding
+    write_to_zarr_store(ds_add['thetao'], f'{tmpdir}', site='',
+                        storetype=storetype, consolidated=consolidated)
     return None
+
+
+@pytest.mark.parametrize("storetype", ['directory', 'zip'])
+@pytest.mark.parametrize("consolidated", [True, False])
+def test_appending_needed(tmpdir, storetype, consolidated):
+    from history2CMIParchive.zarr_stores import write_to_zarr_store
+    from history2CMIParchive.zarr_stores import appending_needed
+
+    # ---------------------------------------------------------------
+    # write a first store
+    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}', site='',
+                        storetype=storetype, consolidated=consolidated)
+
+    # ----------------------------------------------------------------
+    # test good store
+    check = appending_needed(f'{tmpdir}', 'thetao',
+                             storetype, ds_add['thetao'],
+                             concat_dim='time', consolidated=consolidated)
+    assert check
+
+    # ----------------------------------------------------------------
+    # test bad stores
+    check = appending_needed(f'{tmpdir}', 'thetao',
+                             storetype, ds_bad1['thetao'],
+                             concat_dim='time', consolidated=consolidated)
+    assert not check
+
+    check = appending_needed(f'{tmpdir}', 'thetao',
+                             storetype, ds_bad2['thetao'],
+                             concat_dim='time', consolidated=consolidated)
+    assert not check
+
+    check = appending_needed(f'{tmpdir}', 'thetao',
+                             storetype, ds_bad3['thetao'],
+                             concat_dim='time', consolidated=consolidated)
+    assert not check
+
+    # ---------------------------------------------------------------
+    # test it works on coord too
+    write_to_zarr_store(ds_ref['xh'], f'{tmpdir}', site='',
+                        storetype=storetype, consolidated=consolidated)
+    check = appending_needed(f'{tmpdir}', 'xh',
+                             storetype, ds_add['xh'],
+                             concat_dim='time', consolidated=consolidated)
+    assert not check
