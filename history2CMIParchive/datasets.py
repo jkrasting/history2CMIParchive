@@ -13,22 +13,6 @@ list_straits = ['Agulhas_section', 'Barents_opening', 'Bering_Strait',
                 'Mozambique_Channel', 'Pacific_undercurrent', 'Taiwan_Luzon',
                 'Windward_Passage']
 
-# when appending to store along axis=time, spatial coordinates do not need
-# to be appended (raise error otherwise)
-# coords_need_be_ignored = ['xq', 'yq', 'xh', 'yh', 'zl', 'zi',
-#                          'nv', 'z_l', 'z_i', 'rho2_l', 'rho2_i',
-#                          'xh_sub01', 'yh_sub01', 'xq_sub01', 'yq_sub01',
-#                          'xh_sub02', 'yh_sub02', 'xq_sub02', 'yq_sub02',
-#                          'xh_sub03', 'yh_sub03', 'xq_sub03', 'yq_sub03',
-#                          'xh_sub04', 'yh_sub04', 'xq_sub04', 'yq_sub04',
-#                          'xT', 'xTe', 'yT', 'yTe', 'xB', 'yB', 'ct',
-#                          'CELL_AREA', 'COSROT', 'SINROT', 'GEOLON', 'GEOLAT',
-#                          'Layer', 'Interface', 'scalar_axis']
-
-# same thing for time-invariant datasets
-# datasets_need_be_ignored = ['static', 'Vertical_coordinate',
-#                            'sea_ice_geometry']
-
 
 def convert_archive_to_zarr_store(archive='', outputdir='', workdir='',
                                   ignore_types=[],
@@ -36,8 +20,7 @@ def convert_archive_to_zarr_store(archive='', outputdir='', workdir='',
                                   timedim='time', chunks=None,
                                   storetype='directory', grid='gn', tag='v1',
                                   domain='OM4p25', site='gfdl', debug=False):
-
-    ''' this function should be revised to work with new logic '''
+    '''extract files from tar archive and convert to zarr stores '''
 
     # figure out what files are in the archive
     ncfiles = list_files_archive(archive)
