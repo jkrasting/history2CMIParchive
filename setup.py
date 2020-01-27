@@ -11,5 +11,6 @@ setuptools.setup(
     keywords="",
     url="https://github.com/raphaeldussin/history2CMIParchive",
     packages=['history2CMIParchive'],
-    scripts=['history2CMIParchive/exe/history_nc_to_zarr.py']
+    scripts=['history2CMIParchive/exe/history_nc_to_zarr.py',
+             'history2CMIParchive/exe/history_tar_to_zarr.py']
 )
