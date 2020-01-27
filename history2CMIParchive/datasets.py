@@ -1,11 +1,8 @@
 import xarray as _xr
 from .tar_utilities import list_files_archive
 from .tar_utilities import extract_ncfile_from_archive
-from .zarr_stores import create_zarr_store
-from .zarr_stores import append_to_zarr_store
 from .zarr_stores import write_to_zarr_store
 import subprocess as sp
-import os
 
 # list of straits used in the MOM model
 list_straits = ['Agulhas_section', 'Barents_opening', 'Bering_Strait',
@@ -18,35 +15,35 @@ list_straits = ['Agulhas_section', 'Barents_opening', 'Bering_Strait',
 
 # when appending to store along axis=time, spatial coordinates do not need
 # to be appended (raise error otherwise)
-coords_need_be_ignored = ['xq', 'yq', 'xh', 'yh', 'zl', 'zi',
-                          'nv', 'z_l', 'z_i', 'rho2_l', 'rho2_i',
-                          'xh_sub01', 'yh_sub01', 'xq_sub01', 'yq_sub01',
-                          'xh_sub02', 'yh_sub02', 'xq_sub02', 'yq_sub02',
-                          'xh_sub03', 'yh_sub03', 'xq_sub03', 'yq_sub03',
-                          'xh_sub04', 'yh_sub04', 'xq_sub04', 'yq_sub04',
-                          'xT', 'xTe', 'yT', 'yTe', 'xB', 'yB', 'ct',
-                          'CELL_AREA', 'COSROT', 'SINROT', 'GEOLON', 'GEOLAT',
-                          'Layer', 'Interface', 'scalar_axis']
+# coords_need_be_ignored = ['xq', 'yq', 'xh', 'yh', 'zl', 'zi',
+#                          'nv', 'z_l', 'z_i', 'rho2_l', 'rho2_i',
+#                          'xh_sub01', 'yh_sub01', 'xq_sub01', 'yq_sub01',
+#                          'xh_sub02', 'yh_sub02', 'xq_sub02', 'yq_sub02',
+#                          'xh_sub03', 'yh_sub03', 'xq_sub03', 'yq_sub03',
+#                          'xh_sub04', 'yh_sub04', 'xq_sub04', 'yq_sub04',
+#                          'xT', 'xTe', 'yT', 'yTe', 'xB', 'yB', 'ct',
+#                          'CELL_AREA', 'COSROT', 'SINROT', 'GEOLON', 'GEOLAT',
+#                          'Layer', 'Interface', 'scalar_axis']
 
 # same thing for time-invariant datasets
-datasets_need_be_ignored = ['static', 'Vertical_coordinate',
-                            'sea_ice_geometry']
+# datasets_need_be_ignored = ['static', 'Vertical_coordinate',
+#                            'sea_ice_geometry']
 
 
-def convert_archive_to_zarr_store(archive, ppdir, workdir, ignore_types=[],
-                                  ignore_vars=[], newstore=False,
-                                  storetype='directory',
-                                  grid='gn', tag='v1', time='time',
-                                  domain='OM4p25', chunks=None):
+def convert_archive_to_zarr_store(archive='', outputdir='', workdir='',
+                                  ignore_types=[],
+                                  overwrite=False, consolidated=True,
+                                  timedim='time', chunks=None,
+                                  storetype='directory', grid='gn', tag='v1',
+                                  domain='OM4p25', site='gfdl', debug=False):
 
     ''' this function should be revised to work with new logic '''
 
     # figure out what files are in the archive
     ncfiles = list_files_archive(archive)
 
-    # do not append coordinates,...
-    if not newstore:
-        ignore_types += datasets_need_be_ignored
+    if debug:
+        print(ncfiles)
 
     # build a list of acceptable files
     files_to_convert = []
@@ -60,35 +57,23 @@ def convert_archive_to_zarr_store(archive, ppdir, workdir, ignore_types=[],
         if addfile:
             files_to_convert.append(ncfile)
 
+    if debug:
+        print(files_to_convert)
+
     for ncfile in files_to_convert:
         # extract the file
         extract_ncfile_from_archive(archive, ncfile, workdir)
-        # define path to zarr store
-        print(f'Extract {ncfile} to {workdir}/{ncfile}')
-        rootdir, component_code = define_store_path(workdir + os.sep + ncfile,
-                                                    ppdir, grid=grid, tag=tag,
-                                                    timedim=time)
-        print(f'Copying into zarr store at {rootdir}')
-        # decide chunking if none provided
-        if chunks is None:
-            chunks = chunk_choice(component_code, domain=domain)
-
-        print(f'component_code is {component_code}')
-        print(f'domain is {domain}')
-        print(f'chunks are {chunks}')
-        # open dataset
-        ds = open_dataset(workdir + os.sep + ncfile, chunks,
-                          decode_times=False)
-        # create store
-        if newstore:
-            create_zarr_store(ds, rootdir, ignore_vars=ignore_vars,
-                              storetype=storetype)
-        else:
-            # coordinates don't like to be appended
-            ignore_vars += coords_need_be_ignored
-            # append to store
-            append_to_zarr_store(ds, rootdir, ignore_vars=ignore_vars,
-                                 concat_dim=time, storetype=storetype)
+        # and process it
+        export_nc_out_to_zarr_stores(ncfile=f'{workdir}/{ncfile}',
+                                     outputdir=outputdir,
+                                     overwrite=overwrite,
+                                     consolidated=consolidated,
+                                     timedim=timedim,
+                                     chunks=chunks,
+                                     storetype=storetype,
+                                     grid=grid, tag=tag,
+                                     domain=domain, site=site,
+                                     debug=debug)
 
     return None
 

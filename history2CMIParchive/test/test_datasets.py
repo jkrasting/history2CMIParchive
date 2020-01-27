@@ -1,6 +1,8 @@
 import xarray as xr
 import numpy as np
 import pytest
+import subprocess as sp
+import os
 
 
 def define_test_dataset(resolution=1, nz=15, nt=12):
@@ -206,3 +208,49 @@ def test_export_nc_out_to_zarr_stores(tmpdir, storetype, consolidated):
         check_ds = xr.open_zarr(f'{storepath}/thetao.zip')
 
     assert len(check_ds['time']) == 12
+
+
+@pytest.mark.parametrize("storetype", ['directory', 'zip'])
+@pytest.mark.parametrize("consolidated", [True, False])
+def test_convert_archive_to_zarr_store(tmpdir, storetype, consolidated):
+    from history2CMIParchive.datasets import convert_archive_to_zarr_store
+
+    # set up the directory structure
+    hisdir = f'{tmpdir}/history'
+    workdir = f'{tmpdir}/tmp'
+    ppdir = f'{tmpdir}/pp'
+
+    _ = sp.check_call(f'mkdir -p {hisdir}', shell=True)
+    _ = sp.check_call(f'mkdir -p {workdir}', shell=True)
+    _ = sp.check_call(f'mkdir -p {ppdir}', shell=True)
+
+    ds_1 = define_test_dataset(resolution=1, nt=12)
+    ds_1.to_netcdf(f'{hisdir}/ocean_monthly.nc')
+    ds_2 = define_test_dataset(resolution=1, nt=1)
+    ds_2.to_netcdf(f'{hisdir}/ocean_annual.nc')
+
+    _ = sp.check_call(f'touch {hisdir}/ocean_static.nc', shell=True)
+    _ = sp.check_call(f'tar -cf {hisdir}/1900101.tar {hisdir}/*.nc',
+                      shell=True)
+    _ = sp.check_call(f'rm {hisdir}/*.nc', shell=True)
+
+    assert os.path.exists(f'{hisdir}/1900101.tar')
+
+    # run the conversion
+    convert_archive_to_zarr_store(archive=f'{hisdir}/1900101.tar',
+                                  outputdir=ppdir, workdir=workdir,
+                                  ignore_types=['static'],
+                                  overwrite=False, consolidated=consolidated,
+                                  timedim='time', chunks=None,
+                                  storetype=storetype, grid='gn', tag='v1',
+                                  domain='OM4', site='', debug=True)
+
+    # test the data is produced
+    assert os.path.exists(f'{workdir}/{hisdir}/ocean_annual.nc')
+    assert os.path.exists(f'{workdir}/{hisdir}/ocean_monthly.nc')
+    assert not os.path.exists(f'{workdir}/{hisdir}/ocean_static.nc')
+
+    assert os.path.exists(f'{ppdir}/Omon/thetao/gn/v1/')
+    assert os.path.exists(f'{ppdir}/Omon/so/gn/v1/')
+    assert os.path.exists(f'{ppdir}/Oyr/thetao/gn/v1/')
+    assert os.path.exists(f'{ppdir}/Oyr/so/gn/v1/')
