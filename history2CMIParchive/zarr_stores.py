@@ -2,6 +2,7 @@ import xarray as _xr
 import zarr as _zarr
 import subprocess
 from .site_specific import get_from_tape
+from .yaml_utils import update_yaml
 import os
 
 
@@ -150,7 +151,8 @@ def append_to_zarr_store(ds, rootdir, ignore_vars=[], concat_dim='time',
 
 def write_to_zarr_store(da, storepath, concat_dim='time',
                         storetype='directory', consolidated=True,
-                        overwrite=False, site='gfdl', debug=False):
+                        overwrite=False, site='gfdl', debug=False,
+                        write_yaml=False, rebuild_dict={}):
     """ create/append to a zarr store """
     # by default, set write to true
     write_store = True
@@ -224,6 +226,8 @@ def write_to_zarr_store(da, storepath, concat_dim='time',
         # assuming all went ok at this point, revert to original name
         check = subprocess.check_call(f'mv {fstore_tmp} {fstore}', shell=True)
         exit_code(check)
+        if write_yaml:
+            update_yaml(storepath, varname, rebuild_dict, overwrite=overwrite)
     ds.close()
 
     return None
