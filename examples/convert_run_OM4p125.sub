@@ -1,17 +1,27 @@
 #!/bin/bash
 #SBATCH -p analysis
 #SBATCH -t 48:00:00
-#SBATCH --dependency=###DEPEND
 
 set -x
 umask 022
 
 historydir=/archive/Raphael.Dussin/xanadu_esm4_20190304_mom6_2019.12.16/OM4p125_JRA55do1.4_mle3d_cycle1/gfdl.ncrc4-intel16-prod/history
 outputdir=/archive/Raphael.Dussin/xanadu_esm4_20190304_mom6_2019.12.16/OM4p125_JRA55do1.4_mle3d_cycle1/gfdl.ncrc4-intel16-prod/zstore
-fyear=1991
-lyear=2000
+fyear=1971
+lyear=2018
 
-python=/net2/rnd/anaconda3/envs/analysis/bin/python
+# make sure valid platform and required modules are loaded
+if [ $( gfdl_platform ) == hpcs-csc ] ; then
+   . $MODULESHOME/init/bash
+   module use -a /home/Raphael.Dussin/modulefiles
+   module purge
+   module load condaenv/base
+   . /work/Raphael.Dussin/anaconda3/etc/profile.d/conda.sh
+   conda activate myzarr
+else
+   echo "ERROR: invalid platform"
+   exit 1
+fi
 
 if [ ! -d $outputdir ] ; then mkdir $outputdir ; fi
 
@@ -40,8 +50,11 @@ done
 # double-check item needs processing and run conversion
 if [ -f $outputdir/nextinline/$year.inline ] ; then
 
+  cyear=${year}0101
+  job_uuid=$(uuidgen)
+  mkdir $TMPDIR/${job_uuid}
   sleep 1
-  $python convert_history.py -H $historydir -o $outputdir -y $year -s $fyear -d OM4p125 -i iceberg_trajectories ./ocean_static.nc
+  history_tar_to_zarr.py -i $historydir/$cyear.nc.tar -o $outputdir -w $TMPDIR/${job_uuid} -s zip -d OM4p125 -S gfdl -I iceberg_trajectories
 
   # save state of conversion success/failure
   if [ $? == 0 ] ; then successful=1 ; else successful=0 ; resubmit=0 ; fi
