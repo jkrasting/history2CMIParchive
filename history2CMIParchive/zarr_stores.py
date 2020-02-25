@@ -242,23 +242,32 @@ def appending_needed(storepath, variable, storetype, new_data,
     current = _xr.open_zarr(f'{fstore}', decode_times=False,
                             consolidated=consolidated)
 
+
     if concat_dim in current.dims:
+
+        nt = len(current[concat_dim].values)
+        test_gap = True if (nt >=2) else False
+
         last_current_frame = current[concat_dim].values[-1]
-        prev_current_frame = current[concat_dim].values[-2]
+        if test_gap:
+            prev_current_frame = current[concat_dim].values[-2]
         new_frame = new_data[concat_dim].values[0]
         current.close()
 
         # test posteriority
         posterior_ok = True if (new_frame > last_current_frame) else False
         # test for gaps in time axis
-        dt_old = last_current_frame - prev_current_frame
-        dt_new = new_frame - last_current_frame
-        # monthly/annual avg time interval can vary slightly because
-        # of month length and leap days, hence need for tolerance
-        rtol = 0.2
-        dt_min = dt_old * (1 - rtol)
-        dt_max = dt_old * (1 + rtol)
-        continuity_ok = True if (dt_min < dt_new < dt_max) else False
+        if test_gap:
+            dt_old = last_current_frame - prev_current_frame
+            dt_new = new_frame - last_current_frame
+            # monthly/annual avg time interval can vary slightly because
+            # of month length and leap days, hence need for tolerance
+            rtol = 0.2
+            dt_min = dt_old * (1 - rtol)
+            dt_max = dt_old * (1 + rtol)
+            continuity_ok = True if (dt_min < dt_new < dt_max) else False
+        else:
+            continuity_ok = True  # only one segment
         # final decision
         append = True if (posterior_ok and continuity_ok) else False
     else:
