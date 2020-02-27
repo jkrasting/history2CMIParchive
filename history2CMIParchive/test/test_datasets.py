@@ -289,5 +289,3 @@ def test_convert_archive_to_zarr_store(tmpdir, storetype, consolidated,
             store_history = yaml.load(f, Loader=yaml.FullLoader)
             f.close()
         assert len(store_history['files']) == 1
-        print(store_history)
-        assert 0 == 1
