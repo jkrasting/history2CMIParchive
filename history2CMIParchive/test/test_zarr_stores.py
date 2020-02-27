@@ -3,6 +3,7 @@ import numpy as np
 import subprocess as sp
 import pytest
 import os
+import yaml
 
 
 # test datasets
@@ -119,13 +120,21 @@ def test_append_zarr_store(tmpdir, storetype, consolidated):
 
 @pytest.mark.parametrize("storetype", ['directory', 'zip'])
 @pytest.mark.parametrize("consolidated", [True, False])
-def test_write_to_zarr_store(tmpdir, storetype, consolidated):
+@pytest.mark.parametrize("write_yaml", [True, False])
+def test_write_to_zarr_store(tmpdir, storetype, consolidated, write_yaml):
     from history2CMIParchive.zarr_stores import write_to_zarr_store
 
     # ---------------------------------------------------------------
     # test the write mode
+
+    rebuild_dict = {'path': '',
+                    'options': '',
+                    'varname': 'thetao',
+                    'files': [{'tar1': 'file1'}]}
+
     write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}', site='',
-                        storetype=storetype, consolidated=consolidated)
+                        storetype=storetype, consolidated=consolidated,
+                        write_yaml=write_yaml, rebuild_dict=rebuild_dict)
 
     if storetype == 'directory':
         # check permission for a random chunk
@@ -140,20 +149,44 @@ def test_write_to_zarr_store(tmpdir, storetype, consolidated):
     temp_from_zarr = read_store(tmpdir, 'thetao', storetype, consolidated)
     assert ds_ref['thetao'] == temp_from_zarr
 
+    if write_yaml:
+        assert os.path.exists(f'{tmpdir}/thetao.yml')
+        with open(f'{tmpdir}/thetao.yml', 'r') as f:
+            store_history = yaml.load(f, Loader=yaml.FullLoader)
+            assert len(store_history['files']) == 1
     # ---------------------------------------------------------------
     # try to overwrite
     write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}', site='',
                         storetype=storetype, consolidated=consolidated,
-                        overwrite=True)
+                        overwrite=True, write_yaml=write_yaml,
+                        rebuild_dict=rebuild_dict)
 
+    if write_yaml:
+        assert os.path.exists(f'{tmpdir}/thetao.yml')
+        with open(f'{tmpdir}/thetao.yml', 'r') as f:
+            store_history = yaml.load(f, Loader=yaml.FullLoader)
+            assert len(store_history['files']) == 1
     # ---------------------------------------------------------------
     # test append mode with good data
+
+    rebuild_dict2 = {'path': '',
+                     'options': '',
+                     'varname': 'thetao',
+                     'files': [{'tar2': 'file2'}]}
+
     write_to_zarr_store(ds_add['thetao'], f'{tmpdir}', site='',
-                        storetype=storetype, consolidated=consolidated)
+                        storetype=storetype, consolidated=consolidated,
+                        write_yaml=write_yaml, rebuild_dict=rebuild_dict2)
 
     ds_update = xr.concat([ds_ref, ds_add], dim='time')
     temp_from_zarr = read_store(tmpdir, 'thetao', storetype, consolidated)
     assert ds_update['thetao'] == temp_from_zarr
+
+    if write_yaml:
+        assert os.path.exists(f'{tmpdir}/thetao.yml')
+        with open(f'{tmpdir}/thetao.yml', 'r') as f:
+            store_history = yaml.load(f, Loader=yaml.FullLoader)
+            assert len(store_history['files']) == 2
 
     # ----------------------------------------------------------------
     # now with bad data, first we overwrite:
