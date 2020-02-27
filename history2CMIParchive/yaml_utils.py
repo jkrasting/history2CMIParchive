@@ -2,15 +2,19 @@ import yaml
 import os
 
 
-def create_build_yaml():
+def create_build_history(historydir, storedir, storetype, consolidated,
+                         timedim, chunks, grid, tag, domain, site, varname,
+                         files):
     """ create a dictionary describing the zarr store build process
     that can be used to rebuild the store """
 
     path = {'history': historydir, 'store': storedir}
-    options = {'storetype': storetype, 'consolidated': consolidated}
-    files = []
+    options = {'storetype': storetype, 'consolidated': consolidated,
+               'timedim': timedim, 'chunks': chunks, 'grid': grid,
+               'tag': tag, 'domain': domain, 'site': site}
 
-    build = {'path': path, 'options': options, 'files': files}
+    build = {'path': path, 'options': options, 'varname': varname,
+             'files': files}
 
     return build
 
@@ -38,6 +42,7 @@ def update_yaml(storepath, varname, update_history, overwrite=False):
         # this is not supposed to change
         assert store_history['path'] == update_history['path']
         assert store_history['options'] == update_history['options']
+        assert store_history['varname'] == update_history['varname']
 
         # this is the sensitive part: if the content of files is not
         # already in the store history, then we need to update. Otherwise

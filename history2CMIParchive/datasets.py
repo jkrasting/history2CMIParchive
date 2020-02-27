@@ -3,6 +3,8 @@ from .tar_utilities import list_files_archive
 from .tar_utilities import extract_ncfile_from_archive
 from .zarr_stores import write_to_zarr_store
 import subprocess as sp
+from .yaml_utils import create_build_history
+
 
 # list of straits used in the MOM model
 list_straits = ['Agulhas_section', 'Barents_opening', 'Bering_Strait',
@@ -19,7 +21,8 @@ def convert_archive_to_zarr_store(archive='', outputdir='', workdir='',
                                   overwrite=False, consolidated=True,
                                   timedim='time', chunks=None,
                                   storetype='directory', grid='gn', tag='v1',
-                                  domain='OM4p25', site='gfdl', debug=False):
+                                  domain='OM4p25', site='gfdl', debug=False,
+                                  write_yaml=True):
     '''extract files from tar archive and convert to zarr stores '''
 
     # figure out what files are in the archive
@@ -49,6 +52,7 @@ def convert_archive_to_zarr_store(archive='', outputdir='', workdir='',
         # and process it
         export_nc_out_to_zarr_stores(ncfile=f'{workdir}/{ncfile}',
                                      outputdir=outputdir,
+                                     archive=archive,
                                      overwrite=overwrite,
                                      consolidated=consolidated,
                                      timedim=timedim,
@@ -56,13 +60,14 @@ def convert_archive_to_zarr_store(archive='', outputdir='', workdir='',
                                      storetype=storetype,
                                      grid=grid, tag=tag,
                                      domain=domain, site=site,
-                                     debug=debug)
+                                     debug=debug, write_yaml=write_yaml)
 
     return None
 
 
 def export_nc_out_to_zarr_stores(ncfile='',
                                  outputdir='',
+                                 archive='',
                                  overwrite=False,
                                  consolidated=True,
                                  timedim='time',
@@ -70,7 +75,7 @@ def export_nc_out_to_zarr_stores(ncfile='',
                                  storetype='directory',
                                  grid='gn', tag='v1',
                                  domain='OM4p25', site='gfdl',
-                                 debug=False):
+                                 debug=False, write_yaml=True):
 
     """convert all variables form netcdf file and distribute into
     zarr stores"""
@@ -95,13 +100,26 @@ def export_nc_out_to_zarr_stores(ncfile='',
         # and create path
         check = sp.check_call(f'mkdir -p {storepath}', shell=True)
         exit_code(check)
+        # build dict for yaml file
+        if len(archive) > 0:
+            tarfile = archive.replace('/', ' ').split()[-1]
+            historydir = archive.replace(tarfile, '')
+        else:
+            tarfile = 'unknown'
+            historydir = 'unknown'
+        files = [{tarfile: ncfile.replace('/', ' ').split()[-1]}]
+        rebuild_dict = create_build_history(historydir, outputdir,
+                                            storetype, consolidated,
+                                            timedim, chunks, grid, tag,
+                                            domain, site, variable, files)
         # write the store
         if debug:
             print(f'writing {variable} into {storepath}')
         write_to_zarr_store(ds[variable], storepath,
                             concat_dim=timedim, storetype=storetype,
                             consolidated=consolidated,
-                            overwrite=overwrite, site=site, debug=debug)
+                            overwrite=overwrite, site=site, debug=debug,
+                            write_yaml=write_yaml, rebuild_dict=rebuild_dict)
     return None
 
 

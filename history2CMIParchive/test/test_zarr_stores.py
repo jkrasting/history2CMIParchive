@@ -129,6 +129,7 @@ def test_write_to_zarr_store(tmpdir, storetype, consolidated, write_yaml):
 
     rebuild_dict = {'path': '',
                     'options': '',
+                    'varname': 'thetao',
                     'files': [{'tar1': 'file1'}]}
 
     write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}', site='',
@@ -170,6 +171,7 @@ def test_write_to_zarr_store(tmpdir, storetype, consolidated, write_yaml):
 
     rebuild_dict2 = {'path': '',
                      'options': '',
+                     'varname': 'thetao',
                      'files': [{'tar2': 'file2'}]}
 
     write_to_zarr_store(ds_add['thetao'], f'{tmpdir}', site='',

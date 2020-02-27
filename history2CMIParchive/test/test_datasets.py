@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 import subprocess as sp
 import os
+import yaml
 
 
 def define_test_dataset(resolution=1, nz=15, nt=12):
@@ -132,7 +133,9 @@ def test_chunk_choice(code, domain):
 
 @pytest.mark.parametrize("storetype", ['directory', 'zip'])
 @pytest.mark.parametrize("consolidated", [True, False])
-def test_export_nc_out_to_zarr_stores(tmpdir, storetype, consolidated):
+@pytest.mark.parametrize("write_yaml", [True, False])
+def test_export_nc_out_to_zarr_stores(tmpdir, storetype, consolidated,
+                                      write_yaml):
     from history2CMIParchive.datasets import export_nc_out_to_zarr_stores
     from history2CMIParchive.datasets import define_component_code
     from history2CMIParchive.datasets import infer_store_path
@@ -150,7 +153,8 @@ def test_export_nc_out_to_zarr_stores(tmpdir, storetype, consolidated):
                                  chunks=None,
                                  storetype=storetype,
                                  grid='gn', tag='v1',
-                                 domain='OM4', site='')
+                                 domain='OM4', site='',
+                                 write_yaml=write_yaml)
 
     comp_code = define_component_code(f'{tmpdir}/ocean_monthly.nc')
     storepath = infer_store_path(f'{tmpdir}/ocean_monthly.nc',
@@ -163,6 +167,13 @@ def test_export_nc_out_to_zarr_stores(tmpdir, storetype, consolidated):
         check_ds = xr.open_zarr(f'{storepath}/thetao.zip')
 
     assert check_ds['thetao'].equals(ds_1['thetao'])
+
+    if write_yaml:
+        assert os.path.exists(f'{storepath}/thetao.yml')
+        with open(f'{storepath}/thetao.yml') as f:
+            store_history = yaml.load(f, Loader=yaml.FullLoader)
+            f.close()
+        assert len(store_history['files']) == 1
 
     # ---------------------------------------------------------
     # test appending
@@ -189,6 +200,13 @@ def test_export_nc_out_to_zarr_stores(tmpdir, storetype, consolidated):
 
     assert len(check_ds['time']) == 24
 
+    if write_yaml:
+        assert os.path.exists(f'{storepath}/thetao.yml')
+        with open(f'{storepath}/thetao.yml') as f:
+            store_history = yaml.load(f, Loader=yaml.FullLoader)
+            f.close()
+        assert len(store_history['files']) == 2
+
     # ---------------------------------------------------------
     # test overwrite
 
@@ -209,10 +227,19 @@ def test_export_nc_out_to_zarr_stores(tmpdir, storetype, consolidated):
 
     assert len(check_ds['time']) == 12
 
+    if write_yaml:
+        assert os.path.exists(f'{storepath}/thetao.yml')
+        with open(f'{storepath}/thetao.yml') as f:
+            store_history = yaml.load(f, Loader=yaml.FullLoader)
+            f.close()
+        assert len(store_history['files']) == 1
+
 
 @pytest.mark.parametrize("storetype", ['directory', 'zip'])
 @pytest.mark.parametrize("consolidated", [True, False])
-def test_convert_archive_to_zarr_store(tmpdir, storetype, consolidated):
+@pytest.mark.parametrize("write_yaml", [True, False])
+def test_convert_archive_to_zarr_store(tmpdir, storetype, consolidated,
+                                       write_yaml):
     from history2CMIParchive.datasets import convert_archive_to_zarr_store
 
     # set up the directory structure
@@ -243,7 +270,8 @@ def test_convert_archive_to_zarr_store(tmpdir, storetype, consolidated):
                                   overwrite=False, consolidated=consolidated,
                                   timedim='time', chunks=None,
                                   storetype=storetype, grid='gn', tag='v1',
-                                  domain='OM4', site='', debug=True)
+                                  domain='OM4', site='', debug=True,
+                                  write_yaml=write_yaml)
 
     # test the data is produced
     assert os.path.exists(f'{workdir}/{hisdir}/ocean_annual.nc')
@@ -254,3 +282,12 @@ def test_convert_archive_to_zarr_store(tmpdir, storetype, consolidated):
     assert os.path.exists(f'{ppdir}/Omon/so/gn/v1/')
     assert os.path.exists(f'{ppdir}/Oyr/thetao/gn/v1/')
     assert os.path.exists(f'{ppdir}/Oyr/so/gn/v1/')
+
+    if write_yaml:
+        assert os.path.exists(f'{ppdir}/Omon/thetao/gn/v1/thetao.yml')
+        with open(f'{ppdir}/Omon/thetao/gn/v1/thetao.yml') as f:
+            store_history = yaml.load(f, Loader=yaml.FullLoader)
+            f.close()
+        assert len(store_history['files']) == 1
+        print(store_history)
+        assert 0 == 1
