@@ -46,6 +46,9 @@ parser.add_argument('-I', '--ignore', nargs='+', required=False,
 parser.add_argument('-D', '--debug', type=bool, required=False,
                     help="print debug information")
 
+parser.add_argument('-Y', '--write_yaml', type=bool, required=False,
+                    default=True, help="write companion yaml file")
+
 parser.add_argument("--Wall", help='show warnings')
 
 args = parser.parse_args()
