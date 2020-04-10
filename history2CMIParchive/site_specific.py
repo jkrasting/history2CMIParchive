@@ -1,7 +1,7 @@
 import subprocess as sp
 
 
-def get_from_tape(mydir, myfile, site='gfdl', debug=False):
+def get_from_tape(mydir, myfile, site=None, debug=False):
     """ wrapper around tape utilities that are site specific """
     if site == 'gfdl':
         command = f'dmget -v -d {mydir} {myfile}'

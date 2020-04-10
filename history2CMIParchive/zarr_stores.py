@@ -66,7 +66,7 @@ def create_zarr_store(ds, rootdir, ignore_vars=[],
 
 def append_to_zarr_store(ds, rootdir, ignore_vars=[], concat_dim='time',
                          storetype='directory',
-                         consolidated=True, site='gfdl'):
+                         consolidated=True, site=None):
     """
     OBSOLETE
 
@@ -151,7 +151,7 @@ def append_to_zarr_store(ds, rootdir, ignore_vars=[], concat_dim='time',
 
 def write_to_zarr_store(da, storepath, concat_dim='time',
                         storetype='directory', consolidated=True,
-                        overwrite=False, site='gfdl', debug=False,
+                        overwrite=False, site=None, debug=False,
                         write_yaml=False, rebuild_dict={}):
     """ create/append to a zarr store """
     # by default, set write to true

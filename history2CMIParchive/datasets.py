@@ -21,7 +21,7 @@ def convert_archive_to_zarr_store(archive='', outputdir='', workdir='',
                                   overwrite=False, consolidated=True,
                                   timedim='time', chunks=None,
                                   storetype='directory', grid='gn', tag='v1',
-                                  domain='OM4p25', site='gfdl', debug=False,
+                                  domain='OM4p25', site=None, debug=False,
                                   write_yaml=True):
     '''extract files from tar archive and convert to zarr stores '''
 
@@ -74,7 +74,7 @@ def export_nc_out_to_zarr_stores(ncfile='',
                                  chunks=None,
                                  storetype='directory',
                                  grid='gn', tag='v1',
-                                 domain='OM4p25', site='gfdl',
+                                 domain='OM4p25', site=None,
                                  debug=False, write_yaml=True):
 
     """convert all variables form netcdf file and distribute into
