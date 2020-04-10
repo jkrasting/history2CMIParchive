@@ -243,8 +243,12 @@ def appending_needed(storepath, variable, storetype, new_data,
     elif storetype == 'zip':
         fstore = f'{storepath}/{variable}.zip'
 
-    current = _xr.open_zarr(f'{fstore}', decode_times=False,
-                            consolidated=consolidated)
+    try:
+        current = _xr.open_zarr(f'{fstore}', decode_times=False,
+                                consolidated=consolidated)
+    except:
+        raise IOError(f'{fstore} is not readable, file must be damaged. \
+                       Rebuild store needeed')
 
 
     if concat_dim in current.dims:
