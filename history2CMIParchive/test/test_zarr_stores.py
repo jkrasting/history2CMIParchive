@@ -93,15 +93,13 @@ def test_append_zarr_store(tmpdir, storetype, consolidated):
     append_to_zarr_store(ds_add, rootdir,
                          ignore_vars=['xh', 'yh', 'z_l'],
                          storetype=storetype,
-                         consolidated=consolidated,
-                         site='')
+                         consolidated=consolidated)
 
     # test function filters out variables without concat dim
     append_to_zarr_store(ds_add, rootdir,
                          ignore_vars=[],
                          storetype=storetype,
-                         consolidated=consolidated,
-                         site='')
+                         consolidated=consolidated)
 
     if storetype == 'directory':
         # check permission for a random chunk
@@ -132,7 +130,7 @@ def test_write_to_zarr_store(tmpdir, storetype, consolidated, write_yaml):
                     'varname': 'thetao',
                     'files': [{'tar1': 'file1'}]}
 
-    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}', site='',
+    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}',
                         storetype=storetype, consolidated=consolidated,
                         write_yaml=write_yaml, rebuild_dict=rebuild_dict)
 
@@ -156,7 +154,7 @@ def test_write_to_zarr_store(tmpdir, storetype, consolidated, write_yaml):
             assert len(store_history['files']) == 1
     # ---------------------------------------------------------------
     # try to overwrite
-    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}', site='',
+    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}',
                         storetype=storetype, consolidated=consolidated,
                         overwrite=True, write_yaml=write_yaml,
                         rebuild_dict=rebuild_dict)
@@ -174,7 +172,7 @@ def test_write_to_zarr_store(tmpdir, storetype, consolidated, write_yaml):
                      'varname': 'thetao',
                      'files': [{'tar2': 'file2'}]}
 
-    write_to_zarr_store(ds_add['thetao'], f'{tmpdir}', site='',
+    write_to_zarr_store(ds_add['thetao'], f'{tmpdir}',
                         storetype=storetype, consolidated=consolidated,
                         write_yaml=write_yaml, rebuild_dict=rebuild_dict2)
 
@@ -190,25 +188,25 @@ def test_write_to_zarr_store(tmpdir, storetype, consolidated, write_yaml):
 
     # ----------------------------------------------------------------
     # now with bad data, first we overwrite:
-    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}', site='',
+    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}',
                         storetype=storetype, consolidated=consolidated,
                         overwrite=True)
 
-    write_to_zarr_store(ds_bad1['thetao'], f'{tmpdir}', site='',
+    write_to_zarr_store(ds_bad1['thetao'], f'{tmpdir}',
                         storetype=storetype, consolidated=consolidated)
 
     # check the store have not been updated
     temp_from_zarr = read_store(tmpdir, 'thetao', storetype, consolidated)
     assert ds_ref['thetao'] == temp_from_zarr
 
-    write_to_zarr_store(ds_bad2['thetao'], f'{tmpdir}', site='',
+    write_to_zarr_store(ds_bad2['thetao'], f'{tmpdir}',
                         storetype=storetype, consolidated=consolidated)
 
     # check the store have not been updated
     temp_from_zarr = read_store(tmpdir, 'thetao', storetype, consolidated)
     assert ds_ref['thetao'] == temp_from_zarr
 
-    write_to_zarr_store(ds_bad3['thetao'], f'{tmpdir}', site='',
+    write_to_zarr_store(ds_bad3['thetao'], f'{tmpdir}',
                         storetype=storetype, consolidated=consolidated)
 
     # check the store have not been updated
@@ -217,7 +215,7 @@ def test_write_to_zarr_store(tmpdir, storetype, consolidated, write_yaml):
 
     # ---------------------------------------------------------------
     # overwrite a second time
-    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}', site='',
+    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}',
                         storetype=storetype, consolidated=consolidated,
                         overwrite=True)
 
@@ -226,17 +224,17 @@ def test_write_to_zarr_store(tmpdir, storetype, consolidated, write_yaml):
 
     # ---------------------------------------------------------------
     # test to write/append coordinates without concat dimension
-    write_to_zarr_store(ds_ref['xh'], f'{tmpdir}', site='',
+    write_to_zarr_store(ds_ref['xh'], f'{tmpdir}',
                         storetype=storetype, consolidated=consolidated)
 
-    write_to_zarr_store(ds_ref['xh'], f'{tmpdir}', site='',
+    write_to_zarr_store(ds_ref['xh'], f'{tmpdir}',
                         storetype=storetype, consolidated=consolidated)
 
     # ---------------------------------------------------------------
     # test behavior with incomplete file
 
     # write dataset
-    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}', site='',
+    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}',
                         storetype=storetype, consolidated=consolidated,
                         overwrite=True)
 
@@ -248,7 +246,7 @@ def test_write_to_zarr_store(tmpdir, storetype, consolidated, write_yaml):
                       shell=True)
 
     # try adding
-    write_to_zarr_store(ds_add['thetao'], f'{tmpdir}', site='',
+    write_to_zarr_store(ds_add['thetao'], f'{tmpdir}',
                         storetype=storetype, consolidated=consolidated)
     return None
 
@@ -261,7 +259,7 @@ def test_appending_needed(tmpdir, storetype, consolidated):
 
     # ---------------------------------------------------------------
     # write a first store
-    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}', site='',
+    write_to_zarr_store(ds_ref['thetao'], f'{tmpdir}',
                         storetype=storetype, consolidated=consolidated)
 
     # ----------------------------------------------------------------
@@ -290,7 +288,7 @@ def test_appending_needed(tmpdir, storetype, consolidated):
 
     # ---------------------------------------------------------------
     # test it works on coord too
-    write_to_zarr_store(ds_ref['xh'], f'{tmpdir}', site='',
+    write_to_zarr_store(ds_ref['xh'], f'{tmpdir}',
                         storetype=storetype, consolidated=consolidated)
     check = appending_needed(f'{tmpdir}', 'xh',
                              storetype, ds_add['xh'],

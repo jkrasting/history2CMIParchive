@@ -153,7 +153,7 @@ def test_export_nc_out_to_zarr_stores(tmpdir, storetype, consolidated,
                                  chunks=None,
                                  storetype=storetype,
                                  grid='gn', tag='v1',
-                                 domain='OM4', site='',
+                                 domain='OM4',
                                  write_yaml=write_yaml)
 
     comp_code = define_component_code(f'{tmpdir}/ocean_monthly.nc')
@@ -191,7 +191,7 @@ def test_export_nc_out_to_zarr_stores(tmpdir, storetype, consolidated,
                                  chunks=None,
                                  storetype=storetype,
                                  grid='gn', tag='v1',
-                                 domain='OM4', site='')
+                                 domain='OM4')
 
     if storetype == 'directory':
         check_ds = xr.open_zarr(f'{storepath}/thetao')
@@ -218,7 +218,7 @@ def test_export_nc_out_to_zarr_stores(tmpdir, storetype, consolidated,
                                  chunks=None,
                                  storetype=storetype,
                                  grid='gn', tag='v1',
-                                 domain='OM4', site='')
+                                 domain='OM4')
 
     if storetype == 'directory':
         check_ds = xr.open_zarr(f'{storepath}/thetao')
@@ -270,7 +270,7 @@ def test_convert_archive_to_zarr_store(tmpdir, storetype, consolidated,
                                   overwrite=False, consolidated=consolidated,
                                   timedim='time', chunks=None,
                                   storetype=storetype, grid='gn', tag='v1',
-                                  domain='OM4', site='', debug=True,
+                                  domain='OM4', debug=True,
                                   write_yaml=write_yaml)
 
     # test the data is produced
